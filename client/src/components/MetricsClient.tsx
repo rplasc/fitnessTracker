@@ -3,6 +3,15 @@
 import { useState } from "react";
 import type { Metric } from "@/lib/types";
 
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  );
+}
+
 export default function MetricsClient({
   initialMetrics,
 }: {
@@ -54,16 +63,17 @@ export default function MetricsClient({
 
   return (
     <div className="space-y-5">
-      {/* Current weight card */}
+      {/* Current weight */}
       {latest && (
-        <div className="bg-zinc-900 rounded-2xl p-5 border border-zinc-800">
-          <p className="text-zinc-400 text-xs uppercase tracking-widest mb-1">Current Weight</p>
+        <div className="bg-zinc-900 rounded-2xl p-5">
+          <p className="text-xs text-zinc-500 mb-1">Current weight</p>
           <p className="text-4xl font-bold">
             {latest.bodyWeight.toFixed(1)}{" "}
-            <span className="text-xl text-zinc-400">kg</span>
+            <span className="text-xl text-zinc-400 font-normal">kg</span>
           </p>
           <p className="text-zinc-500 text-xs mt-1">
-            Logged {new Date(latest.date).toLocaleDateString("en-US", {
+            Logged{" "}
+            {new Date(latest.date).toLocaleDateString("en-US", {
               month: "short",
               day: "numeric",
             })}
@@ -76,7 +86,7 @@ export default function MetricsClient({
         onSubmit={logWeight}
         className="bg-zinc-900 rounded-2xl p-4 border border-zinc-800 space-y-3"
       >
-        <h3 className="font-semibold text-sm text-zinc-300">Log Today&apos;s Weight</h3>
+        <h3 className="font-medium text-sm text-zinc-300">Log today&apos;s weight</h3>
         <div className="flex gap-3">
           <input
             type="number"
@@ -101,49 +111,17 @@ export default function MetricsClient({
         {error && <p className="text-red-400 text-xs">{error}</p>}
       </form>
 
-      {/* Mini trend */}
-      {metrics.length >= 2 && (
-        <div className="bg-zinc-900 rounded-2xl p-4 border border-zinc-800">
-          <p className="text-xs text-zinc-400 uppercase tracking-widest mb-3">Trend (last 7)</p>
-          <div className="flex items-end gap-1 h-16">
-            {metrics
-              .slice(0, 7)
-              .reverse()
-              .map((m, i, arr) => {
-                const min = Math.min(...arr.map((x) => x.bodyWeight));
-                const max = Math.max(...arr.map((x) => x.bodyWeight));
-                const range = max - min || 1;
-                const pct = ((m.bodyWeight - min) / range) * 80 + 20;
-                return (
-                  <div key={m.id} className="flex-1 flex flex-col items-center gap-1">
-                    <div
-                      className="w-full bg-indigo-600 rounded-t-sm"
-                      style={{ height: `${pct}%` }}
-                    />
-                  </div>
-                );
-              })}
-          </div>
-          <div className="flex justify-between text-xs text-zinc-600 mt-1">
-            <span>{metrics.length >= 7 ? new Date(metrics[6].date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}</span>
-            <span>{new Date(metrics[0].date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
-          </div>
-        </div>
-      )}
-
       {/* History */}
       <div className="space-y-1">
-        <h3 className="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-2">
-          History
-        </h3>
+        <h3 className="text-xs font-medium text-zinc-500 mb-2">History</h3>
         {metrics.length === 0 ? (
           <p className="text-zinc-500 text-sm text-center py-8">No weight entries yet</p>
         ) : (
-          <div className="bg-zinc-900 rounded-2xl border border-zinc-800 divide-y divide-zinc-800">
+          <div className="bg-zinc-900 rounded-2xl divide-y divide-zinc-800">
             {metrics.map((m) => (
               <div key={m.id} className="px-4 py-3 flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium">
+                  <p className="text-sm font-medium tabular-nums">
                     {m.bodyWeight.toFixed(1)} kg
                   </p>
                   <p className="text-xs text-zinc-500">
@@ -156,9 +134,10 @@ export default function MetricsClient({
                 </div>
                 <button
                   onClick={() => deleteMetric(m.id)}
-                  className="text-zinc-600 hover:text-red-400 transition-colors text-sm"
+                  className="text-zinc-600 hover:text-red-400 transition-colors p-1"
+                  aria-label="Delete entry"
                 >
-                  ✕
+                  <CloseIcon />
                 </button>
               </div>
             ))}

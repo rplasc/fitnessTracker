@@ -1,6 +1,23 @@
 "use client";
 
 import { useState } from "react";
+
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  );
+}
+
+function BackIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+      <polyline points="15 18 9 12 15 6" />
+    </svg>
+  );
+}
 import type {
   PlanSummary,
   PlanDetail,
@@ -132,9 +149,10 @@ export default function PlansClient({
         <div className="flex items-center gap-3">
           <button
             onClick={() => setView("list")}
-            className="text-zinc-400 hover:text-zinc-200 text-sm"
+            className="flex items-center gap-1 text-zinc-400 hover:text-zinc-200 text-sm transition-colors"
           >
-            ← Back
+            <BackIcon />
+            Back
           </button>
           <div className="flex items-center gap-2 flex-1">
             {activePlan.color && (
@@ -155,7 +173,7 @@ export default function PlansClient({
         )}
 
         {/* Exercises */}
-        <div className="bg-zinc-900 rounded-2xl border border-zinc-800 divide-y divide-zinc-800">
+        <div className="bg-zinc-900 rounded-2xl divide-y divide-zinc-800">
           {activePlan.exercises.length === 0 && (
             <p className="text-zinc-500 text-sm text-center py-6">No exercises yet</p>
           )}
@@ -167,9 +185,10 @@ export default function PlansClient({
               </div>
               <button
                 onClick={() => removePlanExercise(pe.id)}
-                className="text-zinc-600 hover:text-red-400 transition-colors text-sm"
+                className="text-zinc-600 hover:text-red-400 transition-colors p-0.5"
+                aria-label="Remove exercise"
               >
-                ✕
+                <CloseIcon />
               </button>
             </div>
           ))}
@@ -214,12 +233,13 @@ export default function PlansClient({
     return (
       <div className="space-y-5">
         <div className="flex items-center gap-3">
-          <button onClick={() => setView("list")} className="text-zinc-400 hover:text-zinc-200 text-sm">
-            ← Back
+          <button onClick={() => setView("list")} className="flex items-center gap-1 text-zinc-400 hover:text-zinc-200 text-sm transition-colors">
+            <BackIcon />
+            Back
           </button>
           <h2 className="font-bold text-lg">Weekly Schedule</h2>
         </div>
-        <div className="bg-zinc-900 rounded-2xl border border-zinc-800 divide-y divide-zinc-800">
+        <div className="bg-zinc-900 rounded-2xl divide-y divide-zinc-800">
           {schedule.map((entry) => (
             <div key={entry.dayOfWeek} className="px-4 py-3 flex items-center justify-between gap-3">
               <span className="text-sm font-medium w-8 text-zinc-300">
@@ -315,7 +335,7 @@ export default function PlansClient({
               className="w-full bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-2xl p-4 text-left transition-colors flex items-center gap-4"
             >
               <div
-                className="w-10 h-10 rounded-xl flex-shrink-0"
+                className="w-10 h-10 rounded-xl shrink-0"
                 style={{ backgroundColor: plan.color ?? "#6366f1" }}
               />
               <div className="flex-1 min-w-0">

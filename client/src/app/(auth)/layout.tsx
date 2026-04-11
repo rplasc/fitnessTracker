@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import Nav from "@/components/Nav";
+import DrawerNav from "@/components/DrawerNav";
 import { serverFetch } from "@/lib/server";
 import type { MeResponse } from "@/lib/types";
 
@@ -15,10 +15,10 @@ export default async function AuthLayout({
 
   return (
     <div className="min-h-screen flex flex-col">
-      <main className="flex-1 max-w-lg mx-auto w-full px-4 pb-24 pt-6">
+      <DrawerNav />
+      <main className="flex-1 max-w-lg mx-auto w-full px-4 pt-6 pb-24">
         {children}
       </main>
-      <Nav />
     </div>
   );
 }

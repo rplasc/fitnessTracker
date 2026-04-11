@@ -1,6 +1,15 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  );
+}
 import type { Exercise, WorkoutSet, WorkoutSession } from "@/lib/types";
 
 interface ActiveSession {
@@ -140,16 +149,9 @@ export default function WorkoutLogger({
 
   if (!session) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-        <div className="w-16 h-16 bg-zinc-900 rounded-2xl flex items-center justify-center border border-zinc-800">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-8 h-8 text-zinc-400">
-            <path d="M6 5v14M18 5v14M2 9h4M18 9h4M2 15h4M18 15h4" strokeLinecap="round" />
-          </svg>
-        </div>
-        <div>
-          <h2 className="text-lg font-semibold">Ready to train?</h2>
-          <p className="text-zinc-400 text-sm mt-1">Start a new workout session</p>
-        </div>
+      <div className="py-16 text-center">
+        <h2 className="text-lg font-semibold mb-1">No active session</h2>
+        <p className="text-zinc-500 text-sm mb-6">Start a session to begin logging sets</p>
         <button
           onClick={startSession}
           className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-8 py-3 rounded-xl transition-colors"
@@ -165,7 +167,7 @@ export default function WorkoutLogger({
       {/* Session header */}
       <div className="bg-zinc-900 rounded-2xl p-4 border border-zinc-800 flex items-center justify-between">
         <div>
-          <p className="text-xs text-zinc-400 uppercase tracking-widest">Active Session</p>
+          <p className="text-xs text-zinc-500">Active session</p>
           <p className="text-sm font-medium mt-0.5">
             {new Date(session.startedAt).toLocaleTimeString("en-US", {
               hour: "numeric",
@@ -223,9 +225,9 @@ export default function WorkoutLogger({
               <p className="font-medium text-indigo-300">{selectedExercise.name}</p>
               <button
                 onClick={() => setSelectedExercise(null)}
-                className="text-zinc-500 hover:text-zinc-300 text-xs"
+                className="text-xs text-zinc-400 hover:text-zinc-200 underline underline-offset-2 transition-colors"
               >
-                change
+                Change
               </button>
             </div>
 
@@ -267,7 +269,7 @@ export default function WorkoutLogger({
 
       {/* Logged sets */}
       {setsByExercise && Object.keys(setsByExercise).length > 0 && (
-        <div className="bg-zinc-900 rounded-2xl p-4 border border-zinc-800 space-y-4">
+        <div className="bg-zinc-900 rounded-2xl p-4 space-y-4">
           <h3 className="font-semibold text-sm text-zinc-300">
             Logged Sets ({session.sets.length})
           </h3>
@@ -281,14 +283,15 @@ export default function WorkoutLogger({
                     className="flex items-center justify-between bg-zinc-800 rounded-lg px-3 py-2"
                   >
                     <span className="text-xs text-zinc-400">Set {s.setNumber}</span>
-                    <span className="text-sm font-mono">
+                    <span className="text-sm tabular-nums">
                       {s.reps} × {s.weight} kg
                     </span>
                     <button
                       onClick={() => deleteSet(s.id)}
-                      className="text-zinc-600 hover:text-red-400 transition-colors text-xs"
+                      className="text-zinc-600 hover:text-red-400 transition-colors p-0.5"
+                      aria-label="Delete set"
                     >
-                      ✕
+                      <CloseIcon />
                     </button>
                   </div>
                 ))}

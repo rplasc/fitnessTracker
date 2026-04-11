@@ -75,7 +75,7 @@ export default function ExercisesClient({
           <button
             key={cat}
             onClick={() => setFilter(cat)}
-            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+            className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
               filter === cat
                 ? "bg-indigo-600 text-white"
                 : "bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-200"
@@ -147,10 +147,10 @@ export default function ExercisesClient({
         <div className="space-y-5">
           {Object.entries(grouped).map(([category, exs]) => (
             <div key={category}>
-              <h2 className="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-2">
+              <h2 className="text-xs font-medium text-zinc-500 mb-2">
                 {category}
               </h2>
-              <div className="bg-zinc-900 rounded-2xl border border-zinc-800 divide-y divide-zinc-800">
+              <div className="bg-zinc-900 rounded-2xl divide-y divide-zinc-800">
                 {exs.map((ex) => (
                   <div key={ex.id} className="px-4 py-3 flex items-center justify-between">
                     <span className="text-sm text-zinc-200">{ex.name}</span>
