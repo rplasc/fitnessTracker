@@ -47,6 +47,11 @@ export default async function DashboardPage() {
               ))}
             </ul>
           </>
+        ) : !data?.lastWorkout ? (
+          <div className="mb-4">
+            <p className="text-sm font-medium text-zinc-200 mb-0.5">Ready to log your first workout?</p>
+            <p className="text-xs text-zinc-500">No plan needed — start a session and log sets as you go.</p>
+          </div>
         ) : (
           <p className="text-zinc-500 text-sm mb-4">No plan scheduled for today</p>
         )}

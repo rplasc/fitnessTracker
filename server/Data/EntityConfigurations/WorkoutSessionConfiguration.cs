@@ -11,6 +11,7 @@ public class WorkoutSessionConfiguration : IEntityTypeConfiguration<WorkoutSessi
         builder.ToTable("workout_session");
         builder.HasKey(s => s.Id);
         builder.Property(s => s.Id).HasColumnName("id");
+        builder.Property(s => s.UserId).HasColumnName("user_id");
         builder.Property(s => s.StartedAt).HasColumnName("started_at").IsRequired();
         builder.Property(s => s.FinishedAt).HasColumnName("finished_at");
         builder.Property(s => s.Notes).HasColumnName("notes").HasMaxLength(2000);

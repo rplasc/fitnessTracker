@@ -325,7 +325,12 @@ export default function PlansClient({
 
       {/* Plan cards */}
       {plans.length === 0 ? (
-        <p className="text-zinc-500 text-sm text-center py-12">No plans yet. Create your first!</p>
+        <div className="py-10 text-center space-y-1.5">
+          <p className="text-sm font-medium text-zinc-300">No plans yet</p>
+          <p className="text-xs text-zinc-500 max-w-xs mx-auto">
+            Plans let you pre-define exercises, sets, and reps — then assign them to days of the week.
+          </p>
+        </div>
       ) : (
         <div className="space-y-3">
           {plans.map((plan) => (

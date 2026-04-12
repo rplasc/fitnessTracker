@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using FitTrack.Api.Data;
 using FitTrack.Api.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -11,12 +12,16 @@ namespace FitTrack.Api.Features.Metrics;
 [Authorize]
 public class MetricsController(AppDbContext db, ILogger<MetricsController> logger) : ControllerBase
 {
+    private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
     [HttpGet]
     public async Task<IActionResult> List([FromQuery] int limit = 30)
     {
+        var userId = GetUserId();
         limit = Math.Clamp(limit, 1, 365);
 
         var metrics = await db.HealthMetrics
+            .Where(m => m.UserId == userId)
             .OrderByDescending(m => m.Date)
             .Take(limit)
             .Select(m => new MetricResponse(
@@ -35,7 +40,10 @@ public class MetricsController(AppDbContext db, ILogger<MetricsController> logge
         if (!DateOnly.TryParseExact(date, "yyyy-MM-dd", out var parsedDate))
             return Problem(statusCode: 400, title: "Invalid date format. Use yyyy-MM-dd");
 
-        var existing = await db.HealthMetrics.FirstOrDefaultAsync(m => m.Date == parsedDate);
+        var userId = GetUserId();
+
+        var existing = await db.HealthMetrics
+            .FirstOrDefaultAsync(m => m.UserId == userId && m.Date == parsedDate);
 
         if (existing is not null)
         {
@@ -49,6 +57,7 @@ public class MetricsController(AppDbContext db, ILogger<MetricsController> logge
 
         var metric = new HealthMetric
         {
+            UserId = userId,
             Date = parsedDate,
             BodyWeight = request.BodyWeight,
             LoggedAt = DateTime.UtcNow
@@ -64,7 +73,9 @@ public class MetricsController(AppDbContext db, ILogger<MetricsController> logge
     [HttpDelete("{metricId:int}")]
     public async Task<IActionResult> Delete(int metricId)
     {
-        var metric = await db.HealthMetrics.FindAsync(metricId);
+        var userId = GetUserId();
+        var metric = await db.HealthMetrics
+            .FirstOrDefaultAsync(m => m.Id == metricId && m.UserId == userId);
         if (metric is null)
             return Problem(statusCode: 404, title: "Metric not found");
 

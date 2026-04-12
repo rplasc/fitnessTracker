@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using FitTrack.Api.Data;
 using FitTrack.Api.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -11,10 +12,15 @@ namespace FitTrack.Api.Features.Schedule;
 [Authorize]
 public class ScheduleController(AppDbContext db) : ControllerBase
 {
+    private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
     [HttpGet]
     public async Task<IActionResult> Get()
     {
+        var userId = GetUserId();
+
         var rows = await db.Schedules
+            .Where(s => s.UserId == userId)
             .Include(s => s.Plan)
             .ToListAsync();
 
@@ -35,16 +41,18 @@ public class ScheduleController(AppDbContext db) : ControllerBase
         if (dayOfWeek < 0 || dayOfWeek > 6)
             return Problem(statusCode: 400, title: "Day of week must be 0 (Sunday) through 6 (Saturday)");
 
+        var userId = GetUserId();
+
         if (request.PlanId is not null)
         {
-            var planExists = await db.Plans.AnyAsync(p => p.Id == request.PlanId);
+            var planExists = await db.Plans.AnyAsync(p => p.Id == request.PlanId && p.UserId == userId);
             if (!planExists)
                 return Problem(statusCode: 404, title: "Plan not found");
         }
 
         var existing = await db.Schedules
             .Include(s => s.Plan)
-            .FirstOrDefaultAsync(s => s.DayOfWeek == dayOfWeek);
+            .FirstOrDefaultAsync(s => s.DayOfWeek == dayOfWeek && s.UserId == userId);
 
         if (existing is not null)
         {
@@ -55,7 +63,7 @@ public class ScheduleController(AppDbContext db) : ControllerBase
             return Ok(new ScheduleEntry(dayOfWeek, existing.PlanId, existing.Plan?.Name, existing.Plan?.Color));
         }
 
-        var schedule = new Models.Schedule { DayOfWeek = dayOfWeek, PlanId = request.PlanId };
+        var schedule = new Models.Schedule { UserId = userId, DayOfWeek = dayOfWeek, PlanId = request.PlanId };
         db.Schedules.Add(schedule);
         await db.SaveChangesAsync();
 

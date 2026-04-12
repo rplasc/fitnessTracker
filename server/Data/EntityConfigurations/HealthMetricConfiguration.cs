@@ -11,6 +11,7 @@ public class HealthMetricConfiguration : IEntityTypeConfiguration<HealthMetric>
         builder.ToTable("health_metric");
         builder.HasKey(m => m.Id);
         builder.Property(m => m.Id).HasColumnName("id");
+        builder.Property(m => m.UserId).HasColumnName("user_id");
         builder.Property(m => m.Date).HasColumnName("date").IsRequired()
             .HasConversion(
                 d => d.ToString("yyyy-MM-dd"),
@@ -18,6 +19,6 @@ public class HealthMetricConfiguration : IEntityTypeConfiguration<HealthMetric>
         builder.Property(m => m.BodyWeight).HasColumnName("body_weight").IsRequired();
         builder.Property(m => m.LoggedAt).HasColumnName("logged_at").IsRequired();
 
-        builder.HasIndex(m => m.Date).IsUnique();
+        builder.HasIndex(m => new { m.UserId, m.Date }).IsUnique();
     }
 }

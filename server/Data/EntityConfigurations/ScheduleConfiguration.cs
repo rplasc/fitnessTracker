@@ -11,9 +11,10 @@ public class ScheduleConfiguration : IEntityTypeConfiguration<Schedule>
         builder.ToTable("schedule");
         builder.HasKey(s => s.Id);
         builder.Property(s => s.Id).HasColumnName("id");
+        builder.Property(s => s.UserId).HasColumnName("user_id");
         builder.Property(s => s.DayOfWeek).HasColumnName("day_of_week").IsRequired();
         builder.Property(s => s.PlanId).HasColumnName("plan_id");
 
-        builder.HasIndex(s => s.DayOfWeek).IsUnique();
+        builder.HasIndex(s => new { s.UserId, s.DayOfWeek }).IsUnique();
     }
 }

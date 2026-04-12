@@ -1,6 +1,7 @@
 // Auth
 export interface MeResponse {
   isAuthenticated: boolean;
+  username: string | null;
   weightUnit: string;
 }
 

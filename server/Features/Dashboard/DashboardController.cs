@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Security.Claims;
 using FitTrack.Api.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,17 +12,20 @@ namespace FitTrack.Api.Features.Dashboard;
 [Authorize]
 public class DashboardController(AppDbContext db) : ControllerBase
 {
+    private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
     [HttpGet]
     public async Task<IActionResult> Get()
     {
-        var todayPlan = await GetTodayPlanAsync();
-        var lastWorkout = await GetLastWorkoutAsync();
-        var currentWeight = await GetCurrentWeightAsync();
+        var userId = GetUserId();
+        var todayPlan = await GetTodayPlanAsync(userId);
+        var lastWorkout = await GetLastWorkoutAsync(userId);
+        var currentWeight = await GetCurrentWeightAsync(userId);
 
         return Ok(new DashboardResponse(todayPlan, lastWorkout, currentWeight));
     }
 
-    private async Task<DashboardTodayPlan?> GetTodayPlanAsync()
+    private async Task<DashboardTodayPlan?> GetTodayPlanAsync(int userId)
     {
         var dayOfWeek = (int)DateTime.UtcNow.DayOfWeek;
 
@@ -29,7 +33,7 @@ public class DashboardController(AppDbContext db) : ControllerBase
             .Include(s => s.Plan)
             .ThenInclude(p => p!.Exercises.OrderBy(pe => pe.OrderIndex))
             .ThenInclude(pe => pe.Exercise)
-            .FirstOrDefaultAsync(s => s.DayOfWeek == dayOfWeek);
+            .FirstOrDefaultAsync(s => s.DayOfWeek == dayOfWeek && s.UserId == userId);
 
         if (schedule?.Plan is null)
             return null;
@@ -41,10 +45,10 @@ public class DashboardController(AppDbContext db) : ControllerBase
         return new DashboardTodayPlan(schedule.Plan.Id, schedule.Plan.Name, schedule.Plan.Color, exercises);
     }
 
-    private async Task<DashboardLastWorkout?> GetLastWorkoutAsync()
+    private async Task<DashboardLastWorkout?> GetLastWorkoutAsync(int userId)
     {
         var session = await db.WorkoutSessions
-            .Where(s => s.FinishedAt != null)
+            .Where(s => s.FinishedAt != null && s.UserId == userId)
             .Include(s => s.Sets)
             .ThenInclude(ws => ws.Exercise)
             .OrderByDescending(s => s.StartedAt)
@@ -66,9 +70,10 @@ public class DashboardController(AppDbContext db) : ControllerBase
         return new DashboardLastWorkout(date, exerciseGroups);
     }
 
-    private async Task<double?> GetCurrentWeightAsync()
+    private async Task<double?> GetCurrentWeightAsync(int userId)
     {
         var latest = await db.HealthMetrics
+            .Where(m => m.UserId == userId)
             .OrderByDescending(m => m.Date)
             .FirstOrDefaultAsync();
 

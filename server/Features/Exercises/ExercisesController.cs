@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using FitTrack.Api.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,10 +11,15 @@ namespace FitTrack.Api.Features.Exercises;
 [Authorize]
 public class ExercisesController(AppDbContext db) : ControllerBase
 {
+    private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
     [HttpGet]
     public async Task<IActionResult> List()
     {
+        var userId = GetUserId();
+
         var exercises = await db.Exercises
+            .Where(e => e.UserId == null || e.UserId == userId)
             .OrderBy(e => e.Category)
             .ThenBy(e => e.Name)
             .Select(e => new ExerciseResponse(e.Id, e.Name, e.Category, e.IsCustom))
@@ -28,13 +34,19 @@ public class ExercisesController(AppDbContext db) : ControllerBase
         if (string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.Category))
             return Problem(statusCode: 400, title: "Name and category are required");
 
-        var exists = await db.Exercises.AnyAsync(e => e.Name == request.Name);
+        var userId = GetUserId();
+        var nameTrimmed = request.Name.Trim();
+
+        // Name must be unique across global exercises and this user's custom exercises
+        var exists = await db.Exercises.AnyAsync(e =>
+            e.Name == nameTrimmed && (e.UserId == null || e.UserId == userId));
         if (exists)
             return Problem(statusCode: 409, title: "An exercise with that name already exists");
 
         var exercise = new Models.Exercise
         {
-            Name = request.Name.Trim(),
+            UserId = userId,
+            Name = nameTrimmed,
             Category = request.Category.Trim(),
             IsCustom = true
         };
@@ -49,7 +61,9 @@ public class ExercisesController(AppDbContext db) : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
-        var exercise = await db.Exercises.FindAsync(id);
+        var userId = GetUserId();
+        var exercise = await db.Exercises.FirstOrDefaultAsync(e =>
+            e.Id == id && (e.UserId == null || e.UserId == userId));
         if (exercise is null)
             return Problem(statusCode: 404, title: "Exercise not found");
 
@@ -59,20 +73,18 @@ public class ExercisesController(AppDbContext db) : ControllerBase
     [HttpGet("{id:int}/last-weight")]
     public async Task<IActionResult> LastWeight(int id)
     {
-        var exerciseExists = await db.Exercises.AnyAsync(e => e.Id == id);
+        var userId = GetUserId();
+
+        var exerciseExists = await db.Exercises.AnyAsync(e =>
+            e.Id == id && (e.UserId == null || e.UserId == userId));
         if (!exerciseExists)
             return Problem(statusCode: 404, title: "Exercise not found");
 
         var lastSet = await db.WorkoutSets
-            .Where(ws => ws.ExerciseId == id)
+            .Where(ws => ws.ExerciseId == id && ws.Session.UserId == userId)
             .OrderByDescending(ws => ws.Session.StartedAt)
             .ThenByDescending(ws => ws.SetNumber)
-            .Select(ws => new
-            {
-                ws.Weight,
-                ws.Reps,
-                ws.Session.StartedAt
-            })
+            .Select(ws => new { ws.Weight, ws.Reps, ws.Session.StartedAt })
             .FirstOrDefaultAsync();
 
         if (lastSet is null)
@@ -87,12 +99,15 @@ public class ExercisesController(AppDbContext db) : ControllerBase
     [HttpGet("{id:int}/progress")]
     public async Task<IActionResult> Progress(int id)
     {
-        var exerciseExists = await db.Exercises.AnyAsync(e => e.Id == id);
+        var userId = GetUserId();
+
+        var exerciseExists = await db.Exercises.AnyAsync(e =>
+            e.Id == id && (e.UserId == null || e.UserId == userId));
         if (!exerciseExists)
             return Problem(statusCode: 404, title: "Exercise not found");
 
         var points = await db.WorkoutSets
-            .Where(ws => ws.ExerciseId == id)
+            .Where(ws => ws.ExerciseId == id && ws.Session.UserId == userId)
             .GroupBy(ws => ws.Session.StartedAt.Date)
             .OrderBy(g => g.Key)
             .Select(g => new ProgressPoint(

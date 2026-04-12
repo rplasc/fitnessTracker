@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using FitTrack.Api.Data;
 using FitTrack.Api.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -11,10 +12,14 @@ namespace FitTrack.Api.Features.Plans;
 [Authorize]
 public class PlansController(AppDbContext db, ILogger<PlansController> logger) : ControllerBase
 {
+    private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
     [HttpGet]
     public async Task<IActionResult> List()
     {
+        var userId = GetUserId();
         var plans = await db.Plans
+            .Where(p => p.UserId == userId)
             .Select(p => new PlanSummary(p.Id, p.Name, p.Description, p.Color))
             .ToListAsync();
 
@@ -27,8 +32,10 @@ public class PlansController(AppDbContext db, ILogger<PlansController> logger) :
         if (string.IsNullOrWhiteSpace(request.Name))
             return Problem(statusCode: 400, title: "Plan name is required");
 
+        var userId = GetUserId();
         var plan = new Plan
         {
+            UserId = userId,
             Name = request.Name.Trim(),
             Description = request.Description?.Trim(),
             Color = request.Color?.Trim()
@@ -37,17 +44,18 @@ public class PlansController(AppDbContext db, ILogger<PlansController> logger) :
         db.Plans.Add(plan);
         await db.SaveChangesAsync();
 
-        logger.LogInformation("Plan {PlanId} created", plan.Id);
+        logger.LogInformation("Plan {PlanId} created by user {UserId}", plan.Id, userId);
         return CreatedAtAction(nameof(GetById), new { planId = plan.Id }, ToDetail(plan, []));
     }
 
     [HttpGet("{planId:int}")]
     public async Task<IActionResult> GetById(int planId)
     {
+        var userId = GetUserId();
         var plan = await db.Plans
             .Include(p => p.Exercises.OrderBy(pe => pe.OrderIndex))
             .ThenInclude(pe => pe.Exercise)
-            .FirstOrDefaultAsync(p => p.Id == planId);
+            .FirstOrDefaultAsync(p => p.Id == planId && p.UserId == userId);
 
         if (plan is null)
             return Problem(statusCode: 404, title: "Plan not found");
@@ -61,10 +69,11 @@ public class PlansController(AppDbContext db, ILogger<PlansController> logger) :
         if (string.IsNullOrWhiteSpace(request.Name))
             return Problem(statusCode: 400, title: "Plan name is required");
 
+        var userId = GetUserId();
         var plan = await db.Plans
             .Include(p => p.Exercises.OrderBy(pe => pe.OrderIndex))
             .ThenInclude(pe => pe.Exercise)
-            .FirstOrDefaultAsync(p => p.Id == planId);
+            .FirstOrDefaultAsync(p => p.Id == planId && p.UserId == userId);
 
         if (plan is null)
             return Problem(statusCode: 404, title: "Plan not found");
@@ -82,7 +91,9 @@ public class PlansController(AppDbContext db, ILogger<PlansController> logger) :
     [HttpDelete("{planId:int}")]
     public async Task<IActionResult> Delete(int planId)
     {
-        var plan = await db.Plans.FindAsync(planId);
+        var userId = GetUserId();
+        var plan = await db.Plans
+            .FirstOrDefaultAsync(p => p.Id == planId && p.UserId == userId);
         if (plan is null)
             return Problem(statusCode: 404, title: "Plan not found");
 
@@ -96,11 +107,14 @@ public class PlansController(AppDbContext db, ILogger<PlansController> logger) :
     [HttpPost("{planId:int}/exercises")]
     public async Task<IActionResult> AddExercise(int planId, [FromBody] AddPlanExerciseRequest request)
     {
-        var planExists = await db.Plans.AnyAsync(p => p.Id == planId);
+        var userId = GetUserId();
+
+        var planExists = await db.Plans.AnyAsync(p => p.Id == planId && p.UserId == userId);
         if (!planExists)
             return Problem(statusCode: 404, title: "Plan not found");
 
-        var exerciseExists = await db.Exercises.AnyAsync(e => e.Id == request.ExerciseId);
+        var exerciseExists = await db.Exercises
+            .AnyAsync(e => e.Id == request.ExerciseId && (e.UserId == null || e.UserId == userId));
         if (!exerciseExists)
             return Problem(statusCode: 404, title: "Exercise not found");
 
@@ -131,7 +145,10 @@ public class PlansController(AppDbContext db, ILogger<PlansController> logger) :
     [HttpDelete("{planId:int}/exercises/{planExerciseId:int}")]
     public async Task<IActionResult> RemoveExercise(int planId, int planExerciseId)
     {
-        var pe = await db.PlanExercises.FirstOrDefaultAsync(pe => pe.Id == planExerciseId && pe.PlanId == planId);
+        var userId = GetUserId();
+        var pe = await db.PlanExercises
+            .Include(x => x.Plan)
+            .FirstOrDefaultAsync(x => x.Id == planExerciseId && x.PlanId == planId && x.Plan.UserId == userId);
         if (pe is null)
             return Problem(statusCode: 404, title: "Plan exercise not found");
 
@@ -143,7 +160,8 @@ public class PlansController(AppDbContext db, ILogger<PlansController> logger) :
     [HttpPut("{planId:int}/exercises/order")]
     public async Task<IActionResult> Reorder(int planId, [FromBody] ReorderRequest request)
     {
-        var planExists = await db.Plans.AnyAsync(p => p.Id == planId);
+        var userId = GetUserId();
+        var planExists = await db.Plans.AnyAsync(p => p.Id == planId && p.UserId == userId);
         if (!planExists)
             return Problem(statusCode: 404, title: "Plan not found");
 
