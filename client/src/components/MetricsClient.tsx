@@ -5,6 +5,7 @@ import type { Metric } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { toDisplayWeight, toKg, toDisplayHeight, toCm, formatWeight, formatHeight, weightStep, weightPlaceholder } from "@/lib/units";
 
 function CloseIcon() {
   return (
@@ -15,26 +16,84 @@ function CloseIcon() {
   );
 }
 
+function UnitToggle({
+  options,
+  value,
+  onChange,
+}: {
+  options: string[];
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="inline-flex rounded-lg overflow-hidden border border-border text-xs">
+      {options.map((opt) => (
+        <button
+          key={opt}
+          onClick={() => onChange(opt)}
+          className={`px-2.5 py-1 transition-colors ${
+            value === opt
+              ? "bg-primary text-primary-foreground font-medium"
+              : "bg-muted text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          {opt}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function MetricsClient({
   initialMetrics,
+  initialWeightUnit,
+  initialHeightUnit,
+  initialHeightCm,
 }: {
   initialMetrics: Metric[];
+  initialWeightUnit: string;
+  initialHeightUnit: string;
+  initialHeightCm: number | null;
 }) {
   const [metrics, setMetrics] = useState<Metric[]>(initialMetrics);
+  const [weightUnit, setWeightUnit] = useState(initialWeightUnit);
+  const [heightUnit, setHeightUnit] = useState(initialHeightUnit);
+  const [heightCm, setHeightCm] = useState<number | null>(initialHeightCm);
   const [weight, setWeight] = useState("");
+  const [heightInput, setHeightInput] = useState("");
+  const [editingHeight, setEditingHeight] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  async function patchSettings(patch: Record<string, unknown>) {
+    await fetch("/api/v1/settings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    });
+  }
+
+  async function handleWeightUnitChange(unit: string) {
+    setWeightUnit(unit);
+    await patchSettings({ weightUnit: unit });
+  }
+
+  async function handleHeightUnitChange(unit: string) {
+    setHeightUnit(unit);
+    await patchSettings({ heightUnit: unit });
+  }
 
   async function logWeight(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setSaving(true);
     const today = new Date().toISOString().split("T")[0];
+    const weightKg = toKg(parseFloat(weight), weightUnit);
     try {
       const res = await fetch(`/api/v1/metrics/${today}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bodyWeight: parseFloat(weight) }),
+        body: JSON.stringify({ bodyWeight: weightKg }),
       });
       if (!res.ok) {
         setError("Failed to save weight.");
@@ -56,6 +115,17 @@ export default function MetricsClient({
     }
   }
 
+  async function saveHeight(e: React.FormEvent) {
+    e.preventDefault();
+    const val = parseFloat(heightInput);
+    if (isNaN(val) || val <= 0) return;
+    const cm = toCm(val, heightUnit);
+    await patchSettings({ heightCm: cm });
+    setHeightCm(cm);
+    setHeightInput("");
+    setEditingHeight(false);
+  }
+
   async function deleteMetric(id: number) {
     const res = await fetch(`/api/v1/metrics/${id}`, { method: "DELETE" });
     if (!res.ok) return;
@@ -66,13 +136,27 @@ export default function MetricsClient({
 
   return (
     <div className="space-y-5">
+      {/* Unit toggles */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Weight</span>
+            <UnitToggle options={["kg", "lb"]} value={weightUnit} onChange={handleWeightUnitChange} />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Height</span>
+            <UnitToggle options={["cm", "in"]} value={heightUnit} onChange={handleHeightUnitChange} />
+          </div>
+        </div>
+      </div>
+
       {/* Current weight */}
       {latest && (
-        <div className="bg-card rounded-2xl p-5">
+        <div className="bg-card rounded-2xl p-5 ring-1 ring-foreground/5">
           <p className="text-xs text-muted-foreground mb-1">Current weight</p>
           <p className="text-4xl font-bold">
-            {latest.bodyWeight.toFixed(1)}{" "}
-            <span className="text-xl text-muted-foreground font-normal">kg</span>
+            {toDisplayWeight(latest.bodyWeight, weightUnit).toFixed(1)}{" "}
+            <span className="text-xl text-muted-foreground font-normal">{weightUnit}</span>
           </p>
           <p className="text-muted-foreground text-xs mt-1">
             Logged{" "}
@@ -84,27 +168,70 @@ export default function MetricsClient({
         </div>
       )}
 
+      {/* Height */}
+      <div className="bg-card rounded-2xl p-5 ring-1 ring-foreground/5">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Height</p>
+            {heightCm != null ? (
+              <p className="text-lg font-semibold">{formatHeight(heightCm, heightUnit)}</p>
+            ) : (
+              <p className="text-sm text-muted-foreground">Not set</p>
+            )}
+          </div>
+          <button
+            onClick={() => {
+              setEditingHeight((v) => !v);
+              if (heightCm != null) {
+                setHeightInput(toDisplayHeight(heightCm, heightUnit).toFixed(1));
+              }
+            }}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
+          >
+            {editingHeight ? "Cancel" : heightCm != null ? "Edit" : "Set height"}
+          </button>
+        </div>
+        {editingHeight && (
+          <form onSubmit={saveHeight} className="flex gap-2 mt-3">
+            <Input
+              type="number"
+              min={50}
+              max={300}
+              step={0.1}
+              placeholder={heightUnit === "in" ? "e.g. 70" : "e.g. 175"}
+              value={heightInput}
+              onChange={(e) => setHeightInput(e.target.value)}
+              className="flex-1"
+              autoFocus
+            />
+            <Button type="submit" size="sm">Save</Button>
+          </form>
+        )}
+      </div>
+
       {/* Log weight form */}
       <Card>
         <CardContent className="p-4 space-y-3">
           <h3 className="font-medium text-sm text-foreground">Log today&apos;s weight</h3>
-          <div className="flex gap-3">
+          <form onSubmit={logWeight} className="flex gap-3">
             <Input
               type="number"
-              step={0.1}
+              step={weightStep(weightUnit)}
               min={1}
-              max={500}
-              placeholder="e.g. 75.5"
+              max={weightUnit === "lb" ? 1100 : 500}
+              placeholder={weightPlaceholder(weightUnit)}
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
               className="flex-1"
               required
             />
-            <Button type="submit" disabled={saving} onClick={(e) => logWeight(e as unknown as React.FormEvent)}>
+            <Button type="submit" disabled={saving}>
               {saving ? "…" : "Log"}
             </Button>
-          </div>
-          <p className="text-muted-foreground text-xs">Weight in kilograms. Updates today&apos;s entry if already logged.</p>
+          </form>
+          <p className="text-muted-foreground text-xs">
+            Weight in {weightUnit}. Updates today&apos;s entry if already logged.
+          </p>
           {error && <p className="text-destructive text-xs">{error}</p>}
         </CardContent>
       </Card>
@@ -120,7 +247,7 @@ export default function MetricsClient({
               <div key={m.id} className="px-4 py-3 flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium tabular-nums">
-                    {m.bodyWeight.toFixed(1)} kg
+                    {formatWeight(m.bodyWeight, weightUnit)}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {new Date(m.date).toLocaleDateString("en-US", {

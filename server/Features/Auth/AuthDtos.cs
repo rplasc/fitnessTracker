@@ -2,7 +2,7 @@ namespace FitTrack.Api.Features.Auth;
 
 public record RegisterRequest(string Username, string Password);
 public record LoginRequest(string Username, string Password);
-public record MeResponse(bool IsAuthenticated, string? Username, string WeightUnit, bool OnboardingComplete, string? DisplayName);
+public record MeResponse(bool IsAuthenticated, string? Username, string WeightUnit, bool OnboardingComplete, string? DisplayName, string HeightUnit = "cm");
 
 public record CompleteOnboardingRequest(
     string DisplayName,

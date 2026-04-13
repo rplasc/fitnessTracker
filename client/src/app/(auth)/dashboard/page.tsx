@@ -1,13 +1,19 @@
 import Link from "next/link";
 import { serverFetch } from "@/lib/server";
-import type { DashboardData } from "@/lib/types";
+import type { DashboardData, Settings } from "@/lib/types";
+import { formatWeight } from "@/lib/units";
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export const metadata = { title: "Dashboard — FitTrack" };
 
 export default async function DashboardPage() {
-  const data = await serverFetch<DashboardData>("/api/v1/dashboard");
+  const [data, settings] = await Promise.all([
+    serverFetch<DashboardData>("/api/v1/dashboard"),
+    serverFetch<Settings>("/api/v1/settings"),
+  ]);
+
+  const weightUnit = settings?.weightUnit ?? "kg";
 
   const today = new Date();
   const dayName = DAY_NAMES[today.getDay()];
@@ -68,9 +74,8 @@ export default async function DashboardPage() {
         <div>
           <p className="text-xs text-muted-foreground mb-0.5">Current weight</p>
           {data?.currentWeight != null ? (
-            <p className="text-lg font-semibold">
-              {data.currentWeight.toFixed(1)}{" "}
-              <span className="text-sm text-muted-foreground font-normal">kg</span>
+            <p className="text-lg font-semibold tabular-nums">
+              {formatWeight(data.currentWeight, weightUnit)}
             </p>
           ) : (
             <p className="text-sm text-muted-foreground">Not logged</p>

@@ -3,6 +3,7 @@ export interface MeResponse {
   isAuthenticated: boolean;
   username: string | null;
   weightUnit: string;
+  heightUnit: string;
   onboardingComplete: boolean;
   displayName: string | null;
 }
@@ -112,4 +113,6 @@ export interface DashboardData {
 // Settings
 export interface Settings {
   weightUnit: string;
+  heightUnit: string;
+  heightCm: number | null;
 }

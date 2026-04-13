@@ -76,6 +76,7 @@ public class AuthController(AppDbContext db, ILogger<AuthController> logger) : C
         string? username = null;
         string? displayName = null;
         var weightUnit = "kg";
+        var heightUnit = "cm";
         var onboardingComplete = false;
 
         if (isAuthenticated)
@@ -86,10 +87,11 @@ public class AuthController(AppDbContext db, ILogger<AuthController> logger) : C
             displayName = user?.DisplayName;
             var setting = await db.Settings.FirstOrDefaultAsync(s => s.UserId == userId);
             weightUnit = setting?.WeightUnit ?? "kg";
+            heightUnit = setting?.HeightUnit ?? "cm";
             onboardingComplete = setting?.OnboardingComplete ?? false;
         }
 
-        return Ok(new MeResponse(isAuthenticated, username, weightUnit, onboardingComplete, displayName));
+        return Ok(new MeResponse(isAuthenticated, username, weightUnit, onboardingComplete, displayName, heightUnit));
     }
 
     [Authorize]

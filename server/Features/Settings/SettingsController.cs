@@ -19,7 +19,7 @@ public class SettingsController(AppDbContext db) : ControllerBase
     {
         var userId = GetUserId();
         var setting = await GetOrCreateAsync(userId);
-        return Ok(new SettingsResponse(setting.WeightUnit));
+        return Ok(new SettingsResponse(setting.WeightUnit, setting.HeightUnit, setting.HeightCm));
     }
 
     [HttpPatch]
@@ -28,14 +28,21 @@ public class SettingsController(AppDbContext db) : ControllerBase
         if (request.WeightUnit is not null && request.WeightUnit != "kg" && request.WeightUnit != "lb")
             return Problem(statusCode: 400, title: "Weight unit must be 'kg' or 'lb'");
 
+        if (request.HeightUnit is not null && request.HeightUnit != "cm" && request.HeightUnit != "in")
+            return Problem(statusCode: 400, title: "Height unit must be 'cm' or 'in'");
+
         var userId = GetUserId();
         var setting = await GetOrCreateAsync(userId);
 
         if (request.WeightUnit is not null)
             setting.WeightUnit = request.WeightUnit;
+        if (request.HeightUnit is not null)
+            setting.HeightUnit = request.HeightUnit;
+        if (request.HeightCm.HasValue)
+            setting.HeightCm = request.HeightCm;
 
         await db.SaveChangesAsync();
-        return Ok(new SettingsResponse(setting.WeightUnit));
+        return Ok(new SettingsResponse(setting.WeightUnit, setting.HeightUnit, setting.HeightCm));
     }
 
     private async Task<Setting> GetOrCreateAsync(int userId)

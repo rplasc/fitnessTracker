@@ -14,6 +14,7 @@ function CloseIcon() {
   );
 }
 import type { Exercise, WorkoutSet, WorkoutSession } from "@/lib/types";
+import { toDisplayWeight, toKg } from "@/lib/units";
 
 interface ActiveSession {
   id: number;
@@ -23,8 +24,10 @@ interface ActiveSession {
 
 export default function WorkoutLogger({
   initialExercises,
+  weightUnit = "kg",
 }: {
   initialExercises: Exercise[];
+  weightUnit?: string;
 }) {
   const [exercises] = useState<Exercise[]>(initialExercises);
   const [session, setSession] = useState<ActiveSession | null>(null);
@@ -76,7 +79,7 @@ export default function WorkoutLogger({
           sessionId: session.id,
           exerciseId: selectedExercise.id,
           reps: parseInt(reps),
-          weight: parseFloat(weight),
+          weight: toKg(parseFloat(weight), weightUnit),
         }),
       });
       if (!res.ok) return;
@@ -246,7 +249,7 @@ export default function WorkoutLogger({
                   />
                 </div>
                 <div className="flex-1">
-                  <label className="text-xs text-muted-foreground mb-1 block">Weight (kg)</label>
+                  <label className="text-xs text-muted-foreground mb-1 block">Weight ({weightUnit})</label>
                   <Input
                     type="number"
                     min={0}
@@ -287,7 +290,7 @@ export default function WorkoutLogger({
                   >
                     <span className="text-xs text-muted-foreground">Set {s.setNumber}</span>
                     <span className="text-sm tabular-nums">
-                      {s.reps} × {s.weight} kg
+                      {s.reps} × {toDisplayWeight(s.weight, weightUnit).toFixed(1)} {weightUnit}
                     </span>
                     <Button
                       variant="ghost"
