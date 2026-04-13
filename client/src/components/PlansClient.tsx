@@ -1,6 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
 
 function CloseIcon() {
   return (
@@ -147,84 +151,91 @@ export default function PlansClient({
     return (
       <div className="space-y-5">
         <div className="flex items-center gap-3">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => setView("list")}
-            className="flex items-center gap-1 text-zinc-400 hover:text-zinc-200 text-sm transition-colors"
+            className="gap-1"
           >
             <BackIcon />
             Back
-          </button>
+          </Button>
           <div className="flex items-center gap-2 flex-1">
             {activePlan.color && (
               <span className="w-3 h-3 rounded-full" style={{ backgroundColor: activePlan.color }} />
             )}
             <h2 className="font-bold text-lg">{activePlan.name}</h2>
           </div>
-          <button
+          <Button
+            variant="destructive"
+            size="sm"
             onClick={() => deletePlan(activePlan.id)}
-            className="text-red-500 hover:text-red-400 text-xs"
           >
             Delete
-          </button>
+          </Button>
         </div>
 
         {activePlan.description && (
-          <p className="text-zinc-400 text-sm">{activePlan.description}</p>
+          <p className="text-muted-foreground text-sm">{activePlan.description}</p>
         )}
 
         {/* Exercises */}
-        <div className="bg-zinc-900 rounded-2xl divide-y divide-zinc-800">
+        <div className="bg-card rounded-2xl divide-y divide-border">
           {activePlan.exercises.length === 0 && (
-            <p className="text-zinc-500 text-sm text-center py-6">No exercises yet</p>
+            <p className="text-muted-foreground text-sm text-center py-6">No exercises yet</p>
           )}
           {activePlan.exercises.map((pe) => (
             <div key={pe.id} className="px-4 py-3 flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium">{pe.exerciseName}</p>
-                <p className="text-xs text-zinc-500">{pe.sets} sets × {pe.reps} reps</p>
+                <p className="text-xs text-muted-foreground">{pe.sets} sets × {pe.reps} reps</p>
               </div>
-              <button
+              <Button
+                variant="ghost"
+                size="icon-sm"
                 onClick={() => removePlanExercise(pe.id)}
-                className="text-zinc-600 hover:text-red-400 transition-colors p-0.5"
                 aria-label="Remove exercise"
               >
                 <CloseIcon />
-              </button>
+              </Button>
             </div>
           ))}
         </div>
 
         {/* Add exercise */}
-        <form onSubmit={addExerciseToPlan} className="bg-zinc-900 rounded-2xl p-4 border border-zinc-800 space-y-3">
-          <h3 className="text-sm font-semibold text-zinc-300">Add Exercise</h3>
-          <select
-            value={addExId}
-            onChange={(e) => setAddExId(e.target.value)}
-            className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            required
-          >
-            <option value="">Select exercise…</option>
-            {exercises.map((ex) => (
-              <option key={ex.id} value={ex.id}>{ex.name} ({ex.category})</option>
-            ))}
-          </select>
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <label className="text-xs text-zinc-400 mb-1 block">Sets</label>
-              <input type="number" min={1} value={addSets} onChange={(e) => setAddSets(e.target.value)}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-center text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        <Card>
+          <CardContent className="p-4 space-y-3">
+            <h3 className="text-sm font-semibold text-foreground">Add Exercise</h3>
+            <select
+              value={addExId}
+              onChange={(e) => setAddExId(e.target.value)}
+              className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              required
+            >
+              <option value="">Select exercise…</option>
+              {exercises.map((ex) => (
+                <option key={ex.id} value={ex.id}>{ex.name} ({ex.category})</option>
+              ))}
+            </select>
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <Label className="mb-1">Sets</Label>
+                <Input type="number" min={1} value={addSets} onChange={(e) => setAddSets(e.target.value)} className="text-center" />
+              </div>
+              <div className="flex-1">
+                <Label className="mb-1">Reps</Label>
+                <Input type="number" min={1} value={addReps} onChange={(e) => setAddReps(e.target.value)} className="text-center" />
+              </div>
             </div>
-            <div className="flex-1">
-              <label className="text-xs text-zinc-400 mb-1 block">Reps</label>
-              <input type="number" min={1} value={addReps} onChange={(e) => setAddReps(e.target.value)}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-center text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-            </div>
-          </div>
-          <button type="submit" disabled={addingEx}
-            className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-700 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors">
-            {addingEx ? "Adding…" : "Add to Plan"}
-          </button>
-        </form>
+            <Button
+              className="w-full"
+              disabled={addingEx}
+              onClick={(e) => addExerciseToPlan(e as unknown as React.FormEvent)}
+            >
+              {addingEx ? "Adding…" : "Add to Plan"}
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -233,16 +244,16 @@ export default function PlansClient({
     return (
       <div className="space-y-5">
         <div className="flex items-center gap-3">
-          <button onClick={() => setView("list")} className="flex items-center gap-1 text-zinc-400 hover:text-zinc-200 text-sm transition-colors">
+          <Button variant="ghost" size="sm" onClick={() => setView("list")} className="gap-1">
             <BackIcon />
             Back
-          </button>
+          </Button>
           <h2 className="font-bold text-lg">Weekly Schedule</h2>
         </div>
-        <div className="bg-zinc-900 rounded-2xl divide-y divide-zinc-800">
+        <div className="bg-card rounded-2xl divide-y divide-border">
           {schedule.map((entry) => (
             <div key={entry.dayOfWeek} className="px-4 py-3 flex items-center justify-between gap-3">
-              <span className="text-sm font-medium w-8 text-zinc-300">
+              <span className="text-sm font-medium w-8 text-foreground">
                 {DAY_NAMES[entry.dayOfWeek]}
               </span>
               <select
@@ -250,7 +261,7 @@ export default function PlansClient({
                 onChange={(e) =>
                   setScheduleDay(entry.dayOfWeek, e.target.value ? parseInt(e.target.value) : null)
                 }
-                className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="flex-1 bg-muted border border-border rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               >
                 <option value="">— Rest day —</option>
                 {plans.map((p) => (
@@ -269,65 +280,85 @@ export default function PlansClient({
     <div className="space-y-5">
       {/* Actions */}
       <div className="flex gap-2">
-        <button
+        <Button
+          variant="outline"
+          className="flex-1"
           onClick={() => setView("schedule")}
-          className="flex-1 bg-zinc-900 border border-zinc-800 hover:border-indigo-600 text-zinc-300 hover:text-indigo-300 text-sm py-2.5 rounded-xl transition-colors"
         >
           Weekly Schedule
-        </button>
-        <button
+        </Button>
+        <Button
+          className="flex-1"
           onClick={() => setShowCreate(true)}
-          className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium py-2.5 rounded-xl transition-colors"
         >
           + New Plan
-        </button>
+        </Button>
       </div>
 
       {/* Create plan form */}
       {showCreate && (
-        <form onSubmit={createPlan} className="bg-zinc-900 rounded-2xl p-4 border border-zinc-800 space-y-3">
-          <h3 className="font-semibold text-sm text-zinc-300">New Plan</h3>
-          <input
-            type="text" placeholder="Plan name" value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-50 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            required
-          />
-          <input
-            type="text" placeholder="Description (optional)" value={newDesc}
-            onChange={(e) => setNewDesc(e.target.value)}
-            className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-50 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-          <div>
-            <p className="text-xs text-zinc-400 mb-2">Color</p>
-            <div className="flex gap-2">
-              {COLORS.map((c) => (
-                <button
-                  key={c} type="button" onClick={() => setNewColor(c)}
-                  className={`w-7 h-7 rounded-full transition-transform ${newColor === c ? "ring-2 ring-white ring-offset-2 ring-offset-zinc-900 scale-110" : ""}`}
-                  style={{ backgroundColor: c }}
-                />
-              ))}
+        <Card>
+          <CardContent className="p-4 space-y-3">
+            <h3 className="font-semibold text-sm text-foreground">New Plan</h3>
+            <div>
+              <Label htmlFor="plan-name" className="mb-1">Name</Label>
+              <Input
+                id="plan-name"
+                type="text"
+                placeholder="Plan name"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                required
+              />
             </div>
-          </div>
-          <div className="flex gap-2">
-            <button type="submit" disabled={creating}
-              className="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-700 text-white text-sm font-semibold py-2 rounded-xl transition-colors">
-              {creating ? "Creating…" : "Create"}
-            </button>
-            <button type="button" onClick={() => setShowCreate(false)}
-              className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm py-2 rounded-xl transition-colors">
-              Cancel
-            </button>
-          </div>
-        </form>
+            <div>
+              <Label htmlFor="plan-desc" className="mb-1">Description (optional)</Label>
+              <Input
+                id="plan-desc"
+                type="text"
+                placeholder="Description"
+                value={newDesc}
+                onChange={(e) => setNewDesc(e.target.value)}
+              />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground mb-2">Color</p>
+              <div className="flex gap-2">
+                {COLORS.map((c) => (
+                  <button
+                    key={c} type="button" onClick={() => setNewColor(c)}
+                    className={`w-7 h-7 rounded-full transition-transform ${newColor === c ? "ring-2 ring-white ring-offset-2 ring-offset-card scale-110" : ""}`}
+                    style={{ backgroundColor: c }}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                className="flex-1"
+                disabled={creating}
+                onClick={(e) => createPlan(e as unknown as React.FormEvent)}
+              >
+                {creating ? "Creating…" : "Create"}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="flex-1"
+                onClick={() => setShowCreate(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Plan cards */}
       {plans.length === 0 ? (
         <div className="py-10 text-center space-y-1.5">
-          <p className="text-sm font-medium text-zinc-300">No plans yet</p>
-          <p className="text-xs text-zinc-500 max-w-xs mx-auto">
+          <p className="text-sm font-medium text-foreground">No plans yet</p>
+          <p className="text-xs text-muted-foreground max-w-xs mx-auto">
             Plans let you pre-define exercises, sets, and reps — then assign them to days of the week.
           </p>
         </div>
@@ -337,19 +368,19 @@ export default function PlansClient({
             <button
               key={plan.id}
               onClick={() => openPlan(plan.id)}
-              className="w-full bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-2xl p-4 text-left transition-colors flex items-center gap-4"
+              className="w-full bg-card border border-border hover:border-muted-foreground rounded-2xl p-4 text-left transition-colors flex items-center gap-4"
             >
               <div
                 className="w-10 h-10 rounded-xl shrink-0"
                 style={{ backgroundColor: plan.color ?? "#6366f1" }}
               />
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-zinc-100 truncate">{plan.name}</p>
+                <p className="font-semibold text-foreground truncate">{plan.name}</p>
                 {plan.description && (
-                  <p className="text-xs text-zinc-500 truncate mt-0.5">{plan.description}</p>
+                  <p className="text-xs text-muted-foreground truncate mt-0.5">{plan.description}</p>
                 )}
               </div>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4 text-zinc-600">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4 text-muted-foreground">
                 <polyline points="9 18 15 12 9 6" />
               </svg>
             </button>

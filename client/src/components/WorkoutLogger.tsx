@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 
 function CloseIcon() {
   return (
@@ -142,7 +145,7 @@ export default function WorkoutLogger({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -151,13 +154,10 @@ export default function WorkoutLogger({
     return (
       <div className="py-16 text-center">
         <h2 className="text-lg font-semibold mb-1">No active session</h2>
-        <p className="text-zinc-500 text-sm mb-6">Start a session to begin logging sets</p>
-        <button
-          onClick={startSession}
-          className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-8 py-3 rounded-xl transition-colors"
-        >
+        <p className="text-muted-foreground text-sm mb-6">Start a session to begin logging sets</p>
+        <Button onClick={startSession} size="lg">
           Start Workout
-        </button>
+        </Button>
       </div>
     );
   }
@@ -165,134 +165,138 @@ export default function WorkoutLogger({
   return (
     <div className="space-y-5">
       {/* Session header */}
-      <div className="bg-zinc-900 rounded-2xl p-4 border border-zinc-800 flex items-center justify-between">
-        <div>
-          <p className="text-xs text-zinc-500">Active session</p>
-          <p className="text-sm font-medium mt-0.5">
-            {new Date(session.startedAt).toLocaleTimeString("en-US", {
-              hour: "numeric",
-              minute: "2-digit",
-            })}
-          </p>
-        </div>
-        <button
-          onClick={finishSession}
-          disabled={finishing}
-          className="bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
-        >
-          {finishing ? "Finishing…" : "Finish"}
-        </button>
-      </div>
+      <Card>
+        <CardContent className="p-4 flex items-center justify-between">
+          <div>
+            <p className="text-xs text-muted-foreground">Active session</p>
+            <p className="text-sm font-medium mt-0.5">
+              {new Date(session.startedAt).toLocaleTimeString("en-US", {
+                hour: "numeric",
+                minute: "2-digit",
+              })}
+            </p>
+          </div>
+          <Button
+            onClick={finishSession}
+            disabled={finishing}
+            variant="secondary"
+          >
+            {finishing ? "Finishing…" : "Finish"}
+          </Button>
+        </CardContent>
+      </Card>
 
       {/* Exercise picker */}
-      <div className="bg-zinc-900 rounded-2xl p-4 border border-zinc-800 space-y-3">
-        <h3 className="font-semibold text-sm text-zinc-300">Log a Set</h3>
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          <h3 className="font-semibold text-sm text-muted-foreground">Log a Set</h3>
 
-        {/* Search */}
-        <input
-          type="text"
-          placeholder="Search exercise…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-50 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        />
+          {/* Search */}
+          <Input
+            type="text"
+            placeholder="Search exercise…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
 
-        {/* Exercise list */}
-        {!selectedExercise && (
-          <div className="max-h-48 overflow-y-auto space-y-1">
-            {filtered.map((ex) => (
-              <button
-                key={ex.id}
-                onClick={() => {
-                  setSelectedExercise(ex);
-                  setSearch("");
-                }}
-                className="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-zinc-800 transition-colors flex justify-between"
-              >
-                <span className="text-zinc-200">{ex.name}</span>
-                <span className="text-zinc-500 text-xs">{ex.category}</span>
-              </button>
-            ))}
-            {filtered.length === 0 && (
-              <p className="text-zinc-500 text-sm text-center py-2">No exercises found</p>
-            )}
-          </div>
-        )}
-
-        {selectedExercise && (
-          <>
-            <div className="flex items-center justify-between">
-              <p className="font-medium text-indigo-300">{selectedExercise.name}</p>
-              <button
-                onClick={() => setSelectedExercise(null)}
-                className="text-xs text-zinc-400 hover:text-zinc-200 underline underline-offset-2 transition-colors"
-              >
-                Change
-              </button>
+          {/* Exercise list */}
+          {!selectedExercise && (
+            <div className="max-h-48 overflow-y-auto space-y-1">
+              {filtered.map((ex) => (
+                <button
+                  key={ex.id}
+                  onClick={() => {
+                    setSelectedExercise(ex);
+                    setSearch("");
+                  }}
+                  className="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-muted transition-colors flex justify-between"
+                >
+                  <span className="text-foreground">{ex.name}</span>
+                  <span className="text-muted-foreground text-xs">{ex.category}</span>
+                </button>
+              ))}
+              {filtered.length === 0 && (
+                <p className="text-muted-foreground text-sm text-center py-2">No exercises found</p>
+              )}
             </div>
+          )}
 
-            {/* Reps + Weight inputs */}
-            <div className="flex gap-3">
-              <div className="flex-1">
-                <label className="text-xs text-zinc-400 mb-1 block">Reps</label>
-                <input
-                  type="number"
-                  min={1}
-                  value={reps}
-                  onChange={(e) => setReps(e.target.value)}
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center text-lg font-semibold"
-                />
+          {selectedExercise && (
+            <>
+              <div className="flex items-center justify-between">
+                <p className="font-medium text-primary">{selectedExercise.name}</p>
+                <button
+                  onClick={() => setSelectedExercise(null)}
+                  className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+                >
+                  Change
+                </button>
               </div>
-              <div className="flex-1">
-                <label className="text-xs text-zinc-400 mb-1 block">Weight (kg)</label>
-                <input
-                  type="number"
-                  min={0}
-                  step={0.5}
-                  value={weight}
-                  onChange={(e) => setWeight(e.target.value)}
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-zinc-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center text-lg font-semibold"
-                />
-              </div>
-            </div>
 
-            <button
-              onClick={addSet}
-              disabled={addingSet}
-              className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white font-semibold py-2.5 rounded-xl transition-colors"
-            >
-              {addingSet ? "Logging…" : "Add Set"}
-            </button>
-          </>
-        )}
-      </div>
+              {/* Reps + Weight inputs */}
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <label className="text-xs text-muted-foreground mb-1 block">Reps</label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={reps}
+                    onChange={(e) => setReps(e.target.value)}
+                    className="text-center text-lg font-semibold"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="text-xs text-muted-foreground mb-1 block">Weight (kg)</label>
+                  <Input
+                    type="number"
+                    min={0}
+                    step={0.5}
+                    value={weight}
+                    onChange={(e) => setWeight(e.target.value)}
+                    className="text-center text-lg font-semibold"
+                  />
+                </div>
+              </div>
+
+              <Button
+                onClick={addSet}
+                disabled={addingSet}
+                className="w-full"
+              >
+                {addingSet ? "Logging…" : "Add Set"}
+              </Button>
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Logged sets */}
       {setsByExercise && Object.keys(setsByExercise).length > 0 && (
-        <div className="bg-zinc-900 rounded-2xl p-4 space-y-4">
-          <h3 className="font-semibold text-sm text-zinc-300">
+        <div className="bg-card rounded-2xl p-4 space-y-4">
+          <h3 className="font-semibold text-sm text-muted-foreground">
             Logged Sets ({session.sets.length})
           </h3>
           {Object.entries(setsByExercise).map(([name, sets]) => (
             <div key={name}>
-              <p className="text-sm font-medium text-zinc-200 mb-2">{name}</p>
+              <p className="text-sm font-medium text-foreground mb-2">{name}</p>
               <div className="space-y-1">
                 {sets.map((s) => (
                   <div
                     key={s.id}
-                    className="flex items-center justify-between bg-zinc-800 rounded-lg px-3 py-2"
+                    className="flex items-center justify-between bg-muted rounded-lg px-3 py-2"
                   >
-                    <span className="text-xs text-zinc-400">Set {s.setNumber}</span>
+                    <span className="text-xs text-muted-foreground">Set {s.setNumber}</span>
                     <span className="text-sm tabular-nums">
                       {s.reps} × {s.weight} kg
                     </span>
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
                       onClick={() => deleteSet(s.id)}
-                      className="text-zinc-600 hover:text-red-400 transition-colors p-0.5"
                       aria-label="Delete set"
                     >
                       <CloseIcon />
-                    </button>
+                    </Button>
                   </div>
                 ))}
               </div>

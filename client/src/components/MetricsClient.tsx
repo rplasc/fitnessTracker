@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import type { Metric } from "@/lib/types";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 
 function CloseIcon() {
   return (
@@ -65,13 +68,13 @@ export default function MetricsClient({
     <div className="space-y-5">
       {/* Current weight */}
       {latest && (
-        <div className="bg-zinc-900 rounded-2xl p-5">
-          <p className="text-xs text-zinc-500 mb-1">Current weight</p>
+        <div className="bg-card rounded-2xl p-5">
+          <p className="text-xs text-muted-foreground mb-1">Current weight</p>
           <p className="text-4xl font-bold">
             {latest.bodyWeight.toFixed(1)}{" "}
-            <span className="text-xl text-zinc-400 font-normal">kg</span>
+            <span className="text-xl text-muted-foreground font-normal">kg</span>
           </p>
-          <p className="text-zinc-500 text-xs mt-1">
+          <p className="text-muted-foreground text-xs mt-1">
             Logged{" "}
             {new Date(latest.date).toLocaleDateString("en-US", {
               month: "short",
@@ -82,49 +85,44 @@ export default function MetricsClient({
       )}
 
       {/* Log weight form */}
-      <form
-        onSubmit={logWeight}
-        className="bg-zinc-900 rounded-2xl p-4 border border-zinc-800 space-y-3"
-      >
-        <h3 className="font-medium text-sm text-zinc-300">Log today&apos;s weight</h3>
-        <div className="flex gap-3">
-          <input
-            type="number"
-            step={0.1}
-            min={1}
-            max={500}
-            placeholder="e.g. 75.5"
-            value={weight}
-            onChange={(e) => setWeight(e.target.value)}
-            className="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-zinc-50 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            required
-          />
-          <button
-            type="submit"
-            disabled={saving}
-            className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white font-semibold px-5 rounded-xl transition-colors"
-          >
-            {saving ? "…" : "Log"}
-          </button>
-        </div>
-        <p className="text-zinc-500 text-xs">Weight in kilograms. Updates today&apos;s entry if already logged.</p>
-        {error && <p className="text-red-400 text-xs">{error}</p>}
-      </form>
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          <h3 className="font-medium text-sm text-foreground">Log today&apos;s weight</h3>
+          <div className="flex gap-3">
+            <Input
+              type="number"
+              step={0.1}
+              min={1}
+              max={500}
+              placeholder="e.g. 75.5"
+              value={weight}
+              onChange={(e) => setWeight(e.target.value)}
+              className="flex-1"
+              required
+            />
+            <Button type="submit" disabled={saving} onClick={(e) => logWeight(e as unknown as React.FormEvent)}>
+              {saving ? "…" : "Log"}
+            </Button>
+          </div>
+          <p className="text-muted-foreground text-xs">Weight in kilograms. Updates today&apos;s entry if already logged.</p>
+          {error && <p className="text-destructive text-xs">{error}</p>}
+        </CardContent>
+      </Card>
 
       {/* History */}
       <div className="space-y-1">
-        <h3 className="text-xs font-medium text-zinc-500 mb-2">History</h3>
+        <h3 className="text-xs font-medium text-muted-foreground mb-2">History</h3>
         {metrics.length === 0 ? (
-          <p className="text-zinc-500 text-sm text-center py-8">No weight entries yet</p>
+          <p className="text-muted-foreground text-sm text-center py-8">No weight entries yet</p>
         ) : (
-          <div className="bg-zinc-900 rounded-2xl divide-y divide-zinc-800">
+          <div className="bg-card rounded-2xl divide-y divide-border">
             {metrics.map((m) => (
               <div key={m.id} className="px-4 py-3 flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium tabular-nums">
                     {m.bodyWeight.toFixed(1)} kg
                   </p>
-                  <p className="text-xs text-zinc-500">
+                  <p className="text-xs text-muted-foreground">
                     {new Date(m.date).toLocaleDateString("en-US", {
                       weekday: "short",
                       month: "short",
@@ -132,13 +130,14 @@ export default function MetricsClient({
                     })}
                   </p>
                 </div>
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() => deleteMetric(m.id)}
-                  className="text-zinc-600 hover:text-red-400 transition-colors p-1"
                   aria-label="Delete entry"
                 >
                   <CloseIcon />
-                </button>
+                </Button>
               </div>
             ))}
           </div>

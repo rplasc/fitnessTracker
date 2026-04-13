@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -38,46 +41,40 @@ export default function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label htmlFor="username" className="block text-sm text-zinc-400 mb-2">
+        <Label htmlFor="username" className="mb-2">
           Username
-        </label>
-        <input
+        </Label>
+        <Input
           id="username"
           type="text"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           placeholder="Enter username"
           autoComplete="username"
-          className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-zinc-50 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           required
         />
       </div>
       <div>
-        <label htmlFor="password" className="block text-sm text-zinc-400 mb-2">
+        <Label htmlFor="password" className="mb-2">
           Password
-        </label>
-        <input
+        </Label>
+        <Input
           id="password"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Enter password"
           autoComplete="current-password"
-          className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-zinc-50 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           required
         />
       </div>
-      {error && <p className="text-red-400 text-sm">{error}</p>}
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white font-semibold py-3 rounded-xl transition-colors"
-      >
+      {error && <p className="text-destructive text-sm">{error}</p>}
+      <Button type="submit" disabled={loading} className="w-full" size="lg">
         {loading ? "Signing in…" : "Sign In"}
-      </button>
-      <p className="text-center text-sm text-zinc-500">
+      </Button>
+      <p className="text-center text-sm text-muted-foreground">
         New to FitTrack?{" "}
-        <Link href="/register" className="text-indigo-400 hover:text-indigo-300 transition-colors">
+        <Link href="/register" className="text-primary hover:text-primary/80 transition-colors">
           Create an account
         </Link>
       </p>

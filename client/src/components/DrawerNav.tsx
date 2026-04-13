@@ -64,7 +64,7 @@ export default function Nav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 bg-zinc-900 border-t border-zinc-800 z-50">
+    <nav className="fixed bottom-0 inset-x-0 bg-card border-t border-border z-50">
       <div className="max-w-lg mx-auto flex">
         {links.map((link) => {
           const active =
@@ -79,14 +79,14 @@ export default function Nav() {
             >
               <span
                 className={`flex items-center justify-center w-10 h-7 rounded-xl transition-colors ${
-                  active ? "bg-zinc-800 text-zinc-50" : "text-zinc-500"
+                  active ? "bg-muted text-foreground" : "text-muted-foreground"
                 }`}
               >
                 {link.icon}
               </span>
               <span
                 className={`text-[10px] leading-tight transition-colors ${
-                  active ? "text-zinc-50" : "text-zinc-600"
+                  active ? "text-foreground" : "text-muted-foreground"
                 }`}
               >
                 {link.label}

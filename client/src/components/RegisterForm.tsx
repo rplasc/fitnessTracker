@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function RegisterForm() {
   const router = useRouter();
@@ -46,10 +49,10 @@ export default function RegisterForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label htmlFor="username" className="block text-sm text-zinc-400 mb-2">
+        <Label htmlFor="username" className="mb-2">
           Username
-        </label>
-        <input
+        </Label>
+        <Input
           id="username"
           type="text"
           value={username}
@@ -57,15 +60,14 @@ export default function RegisterForm() {
           placeholder="Choose a username"
           autoComplete="username"
           maxLength={50}
-          className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-zinc-50 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           required
         />
       </div>
       <div>
-        <label htmlFor="password" className="block text-sm text-zinc-400 mb-2">
+        <Label htmlFor="password" className="mb-2">
           Password
-        </label>
-        <input
+        </Label>
+        <Input
           id="password"
           type="password"
           value={password}
@@ -73,36 +75,30 @@ export default function RegisterForm() {
           placeholder="At least 8 characters"
           autoComplete="new-password"
           minLength={8}
-          className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-zinc-50 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           required
         />
       </div>
       <div>
-        <label htmlFor="confirm" className="block text-sm text-zinc-400 mb-2">
+        <Label htmlFor="confirm" className="mb-2">
           Confirm password
-        </label>
-        <input
+        </Label>
+        <Input
           id="confirm"
           type="password"
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
           placeholder="Repeat your password"
           autoComplete="new-password"
-          className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-zinc-50 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           required
         />
       </div>
-      {error && <p className="text-red-400 text-sm">{error}</p>}
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white font-semibold py-3 rounded-xl transition-colors"
-      >
+      {error && <p className="text-destructive text-sm">{error}</p>}
+      <Button type="submit" disabled={loading} className="w-full" size="lg">
         {loading ? "Creating account…" : "Create Account"}
-      </button>
-      <p className="text-center text-sm text-zinc-500">
+      </Button>
+      <p className="text-center text-sm text-muted-foreground">
         Already have an account?{" "}
-        <Link href="/login" className="text-indigo-400 hover:text-indigo-300 transition-colors">
+        <Link href="/login" className="text-primary hover:text-primary/80 transition-colors">
           Sign in
         </Link>
       </p>

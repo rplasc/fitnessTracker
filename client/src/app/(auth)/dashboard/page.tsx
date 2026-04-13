@@ -57,7 +57,7 @@ export default async function DashboardPage() {
         )}
         <Link
           href="/workout"
-          className="block w-full text-center bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl transition-colors"
+          className="block w-full text-center bg-orange-600 hover:bg-orange-500 text-white font-semibold py-3 rounded-xl transition-colors"
         >
           Start Workout
         </Link>
