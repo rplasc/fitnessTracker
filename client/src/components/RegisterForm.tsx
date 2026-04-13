@@ -33,7 +33,7 @@ export default function RegisterForm() {
       });
 
       if (res.status === 201 || res.ok) {
-        router.push("/");
+        router.push("/onboarding");
         router.refresh();
       } else {
         const data = await res.json().catch(() => ({}));

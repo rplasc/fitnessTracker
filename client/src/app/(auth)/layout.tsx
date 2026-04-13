@@ -12,6 +12,9 @@ export default async function AuthLayout({
   if (!me?.isAuthenticated) {
     redirect("/login");
   }
+  if (!me.onboardingComplete) {
+    redirect("/onboarding");
+  }
 
   return (
     <div className="min-h-screen flex flex-col">

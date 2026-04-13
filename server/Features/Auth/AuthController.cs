@@ -74,17 +74,80 @@ public class AuthController(AppDbContext db, ILogger<AuthController> logger) : C
     {
         var isAuthenticated = User.Identity?.IsAuthenticated == true;
         string? username = null;
+        string? displayName = null;
         var weightUnit = "kg";
+        var onboardingComplete = false;
 
         if (isAuthenticated)
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             username = User.FindFirstValue(ClaimTypes.Name);
+            var user = await db.Users.FindAsync(userId);
+            displayName = user?.DisplayName;
             var setting = await db.Settings.FirstOrDefaultAsync(s => s.UserId == userId);
             weightUnit = setting?.WeightUnit ?? "kg";
+            onboardingComplete = setting?.OnboardingComplete ?? false;
         }
 
-        return Ok(new MeResponse(isAuthenticated, username, weightUnit));
+        return Ok(new MeResponse(isAuthenticated, username, weightUnit, onboardingComplete, displayName));
+    }
+
+    [Authorize]
+    [HttpPost("complete-onboarding")]
+    public async Task<IActionResult> CompleteOnboarding([FromBody] CompleteOnboardingRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.DisplayName) || request.DisplayName.Length > 100)
+            return Problem(statusCode: 400, title: "Display name must be between 1 and 100 characters");
+
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+        // Update display name
+        var user = await db.Users.FindAsync(userId);
+        if (user is null) return Problem(statusCode: 404, title: "User not found");
+        user.DisplayName = request.DisplayName.Trim();
+
+        // Upsert Setting (creates if missing, like GetOrCreateAsync)
+        var setting = await db.Settings.FirstOrDefaultAsync(s => s.UserId == userId);
+        if (setting is null)
+        {
+            setting = new Setting { UserId = userId, WeightUnit = "kg" };
+            db.Settings.Add(setting);
+        }
+        if (request.HeightCm.HasValue) setting.HeightCm = request.HeightCm;
+        setting.OnboardingComplete = true;
+
+        // Log initial body weight if provided
+        if (request.InitialWeightKg.HasValue && request.InitialWeightKg > 0)
+        {
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var existingMetric = await db.HealthMetrics
+                .FirstOrDefaultAsync(m => m.UserId == userId && m.Date == today);
+            if (existingMetric is null)
+            {
+                db.HealthMetrics.Add(new HealthMetric
+                {
+                    UserId = userId,
+                    Date = today,
+                    BodyWeight = (double)request.InitialWeightKg.Value,
+                    LoggedAt = DateTime.UtcNow
+                });
+            }
+        }
+
+        // Create initial plan if a name was provided
+        if (!string.IsNullOrWhiteSpace(request.PlanName))
+        {
+            db.Plans.Add(new Plan
+            {
+                UserId = userId,
+                Name = request.PlanName.Trim(),
+                Color = request.PlanColor
+            });
+        }
+
+        await db.SaveChangesAsync();
+        logger.LogInformation("User {UserId} completed onboarding", userId);
+        return NoContent();
     }
 
     private async Task SignInUser(User user)
