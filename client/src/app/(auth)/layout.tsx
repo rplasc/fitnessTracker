@@ -19,7 +19,7 @@ export default async function AuthLayout({
   return (
     <div className="min-h-screen flex flex-col">
       <DrawerNav />
-      <main className="flex-1 max-w-lg mx-auto w-full px-4 pt-6 pb-24">
+      <main className="flex-1 max-w-lg mx-auto w-full px-4 pt-6 pb-[calc(6rem+env(safe-area-inset-bottom))]">
         {children}
       </main>
     </div>

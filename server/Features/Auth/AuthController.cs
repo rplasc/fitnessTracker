@@ -162,6 +162,7 @@ public class AuthController(AppDbContext db, ILogger<AuthController> logger) : C
         };
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
         var principal = new ClaimsPrincipal(identity);
-        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+        var props = new AuthenticationProperties { IsPersistent = true };
+        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, props);
     }
 }
