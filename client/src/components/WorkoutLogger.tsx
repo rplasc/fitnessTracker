@@ -192,12 +192,10 @@ export default function WorkoutLogger({
       {/* Exercise picker */}
       <Card>
         <CardContent className="p-4 space-y-3">
-          <h3 className="font-semibold text-sm text-muted-foreground">Log a Set</h3>
-
           {/* Search */}
           <Input
             type="text"
-            placeholder="Search exercise…"
+            placeholder="Search exercises"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -227,7 +225,7 @@ export default function WorkoutLogger({
           {selectedExercise && (
             <>
               <div className="flex items-center justify-between">
-                <p className="font-medium text-primary">{selectedExercise.name}</p>
+                <p className="text-lg font-bold text-foreground">{selectedExercise.name}</p>
                 <button
                   onClick={() => setSelectedExercise(null)}
                   className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
@@ -245,7 +243,7 @@ export default function WorkoutLogger({
                     min={1}
                     value={reps}
                     onChange={(e) => setReps(e.target.value)}
-                    className="text-center text-lg font-semibold"
+                    className="text-center text-2xl font-bold"
                   />
                 </div>
                 <div className="flex-1">
@@ -256,7 +254,7 @@ export default function WorkoutLogger({
                     step={0.5}
                     value={weight}
                     onChange={(e) => setWeight(e.target.value)}
-                    className="text-center text-lg font-semibold"
+                    className="text-center text-2xl font-bold"
                   />
                 </div>
               </div>

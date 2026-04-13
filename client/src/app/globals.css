@@ -86,7 +86,7 @@
 }
 
 body {
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
 }
 
 * {
@@ -134,8 +134,12 @@ body {
   body {
     @apply bg-background text-foreground;
     padding-top: env(safe-area-inset-top);
+    font-variant-numeric: tabular-nums;
   }
   html {
     @apply font-sans;
+  }
+  h1, h2, h3 {
+    letter-spacing: -0.02em;
   }
 }
