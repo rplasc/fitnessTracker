@@ -96,15 +96,16 @@ public class AuthController(AppDbContext db, ILogger<AuthController> logger) : C
     [HttpPost("complete-onboarding")]
     public async Task<IActionResult> CompleteOnboarding([FromBody] CompleteOnboardingRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.DisplayName) || request.DisplayName.Length > 100)
-            return Problem(statusCode: 400, title: "Display name must be between 1 and 100 characters");
+        if (request.DisplayName.Length > 100)
+            return Problem(statusCode: 400, title: "Display name must be 100 characters or less");
 
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-        // Update display name
+        // Update display name (empty string = skip, keep null)
         var user = await db.Users.FindAsync(userId);
         if (user is null) return Problem(statusCode: 404, title: "User not found");
-        user.DisplayName = request.DisplayName.Trim();
+        if (!string.IsNullOrWhiteSpace(request.DisplayName))
+            user.DisplayName = request.DisplayName.Trim();
 
         // Upsert Setting (creates if missing, like GetOrCreateAsync)
         var setting = await db.Settings.FirstOrDefaultAsync(s => s.UserId == userId);

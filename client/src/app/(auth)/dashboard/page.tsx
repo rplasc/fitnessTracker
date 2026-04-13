@@ -20,12 +20,12 @@ export default async function DashboardPage() {
     <div className="space-y-5">
       {/* Header — compact */}
       <div>
-        <p className="text-zinc-500 text-xs">{dayName}, {dateStr}</p>
+        <p className="text-muted-foreground text-xs">{dayName}, {dateStr}</p>
         <h1 className="text-xl font-semibold mt-0.5">Dashboard</h1>
       </div>
 
       {/* Today's Plan + Start Workout — dominant primary card */}
-      <div className="bg-zinc-900 rounded-2xl p-5">
+      <div className="bg-card rounded-2xl p-5 ring-1 ring-foreground/5">
         {data?.todayPlan ? (
           <>
             <div className="flex items-center gap-2 mb-1">
@@ -35,29 +35,29 @@ export default async function DashboardPage() {
                   style={{ backgroundColor: data.todayPlan.color }}
                 />
               )}
-              <p className="text-xs text-zinc-500">Today&apos;s plan</p>
+              <p className="text-xs text-muted-foreground">Today&apos;s plan</p>
             </div>
             <h2 className="text-xl font-bold mb-3">{data.todayPlan.name}</h2>
             <ul className="space-y-1 mb-4">
               {data.todayPlan.exercises.map((ex) => (
                 <li key={ex.name} className="flex justify-between text-sm">
-                  <span className="text-zinc-300">{ex.name}</span>
-                  <span className="text-zinc-500">{ex.sets}×{ex.reps}</span>
+                  <span className="text-foreground">{ex.name}</span>
+                  <span className="text-muted-foreground">{ex.sets}×{ex.reps}</span>
                 </li>
               ))}
             </ul>
           </>
         ) : !data?.lastWorkout ? (
           <div className="mb-4">
-            <p className="text-sm font-medium text-zinc-200 mb-0.5">Ready to log your first workout?</p>
-            <p className="text-xs text-zinc-500">No plan needed — start a session and log sets as you go.</p>
+            <p className="text-sm font-medium text-foreground mb-0.5">Ready to log your first workout?</p>
+            <p className="text-xs text-muted-foreground">No plan needed — start a session and log sets as you go.</p>
           </div>
         ) : (
-          <p className="text-zinc-500 text-sm mb-4">No plan scheduled for today</p>
+          <p className="text-muted-foreground text-sm mb-4">No plan scheduled for today</p>
         )}
         <Link
           href="/workout"
-          className="block w-full text-center bg-orange-600 hover:bg-orange-500 text-white font-semibold py-3 rounded-xl transition-colors"
+          className="block w-full text-center bg-primary hover:bg-primary/80 text-primary-foreground font-semibold py-3 rounded-xl transition-colors"
         >
           Start Workout
         </Link>
@@ -66,19 +66,19 @@ export default async function DashboardPage() {
       {/* Current weight — compact inline row */}
       <div className="flex items-center justify-between px-1">
         <div>
-          <p className="text-xs text-zinc-500 mb-0.5">Current weight</p>
+          <p className="text-xs text-muted-foreground mb-0.5">Current weight</p>
           {data?.currentWeight != null ? (
             <p className="text-lg font-semibold">
               {data.currentWeight.toFixed(1)}{" "}
-              <span className="text-sm text-zinc-400 font-normal">kg</span>
+              <span className="text-sm text-muted-foreground font-normal">kg</span>
             </p>
           ) : (
-            <p className="text-sm text-zinc-600">Not logged</p>
+            <p className="text-sm text-muted-foreground">Not logged</p>
           )}
         </div>
         <Link
           href="/metrics"
-          className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors"
+          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
           Log weight
         </Link>
@@ -86,16 +86,16 @@ export default async function DashboardPage() {
 
       {/* Last Workout — secondary, only shown when it exists */}
       {data?.lastWorkout && (
-        <div className="bg-zinc-900 rounded-2xl p-4">
+        <div className="bg-card rounded-2xl p-4 ring-1 ring-foreground/5">
           <div className="flex items-baseline justify-between mb-3">
             <p className="text-sm font-medium">Last workout</p>
-            <p className="text-xs text-zinc-500">{data.lastWorkout.date}</p>
+            <p className="text-xs text-muted-foreground">{data.lastWorkout.date}</p>
           </div>
           <ul className="space-y-2">
             {data.lastWorkout.exercises.map((ex) => (
               <li key={ex.name}>
-                <p className="text-sm text-zinc-300">{ex.name}</p>
-                <p className="text-xs text-zinc-500 mt-0.5">{ex.sets.join(" · ")}</p>
+                <p className="text-sm text-foreground">{ex.name}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{ex.sets.join(" · ")}</p>
               </li>
             ))}
           </ul>

@@ -273,7 +273,7 @@ export default function WorkoutLogger({
       {/* Logged sets */}
       {setsByExercise && Object.keys(setsByExercise).length > 0 && (
         <div className="bg-card rounded-2xl p-4 space-y-4">
-          <h3 className="font-semibold text-sm text-muted-foreground">
+          <h3 className="font-semibold text-sm">
             Logged Sets ({session.sets.length})
           </h3>
           {Object.entries(setsByExercise).map(([name, sets]) => (
