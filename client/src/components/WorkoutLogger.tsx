@@ -95,7 +95,7 @@ export default function WorkoutLogger({
                   exerciseId: selectedExercise.id,
                   exerciseName: selectedExercise.name,
                   reps: parseInt(reps),
-                  weight: parseFloat(weight),
+                  weight: toKg(parseFloat(weight), weightUnit),
                   setNumber: newSet.setNumber,
                 },
               ],
