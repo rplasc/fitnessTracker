@@ -9,7 +9,7 @@ const H = 80;
 const PAD = { top: 8, right: 4, bottom: 8, left: 4 };
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
 function LineChart({ values, dates }: { values: number[]; dates: string[] }) {

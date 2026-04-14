@@ -173,7 +173,7 @@ export default function WorkoutLogger({
           <div>
             <p className="text-xs text-muted-foreground">Active session</p>
             <p className="text-sm font-medium mt-0.5">
-              {new Date(session.startedAt).toLocaleTimeString("en-US", {
+              {new Date(session.startedAt).toLocaleTimeString(undefined, {
                 hour: "numeric",
                 minute: "2-digit",
               })}

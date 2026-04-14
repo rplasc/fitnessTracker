@@ -49,7 +49,8 @@ export default function MetricsClient({
     e.preventDefault();
     setError("");
     setSaving(true);
-    const today = new Date().toISOString().split("T")[0];
+    const d = new Date();
+    const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
     const weightKg = toKg(parseFloat(weight), weightUnit);
     try {
       const res = await fetch(`/api/v1/metrics/${today}`, {
@@ -108,7 +109,7 @@ export default function MetricsClient({
           </p>
           <p className="text-muted-foreground text-xs mt-1">
             Logged{" "}
-            {new Date(latest.date).toLocaleDateString("en-US", {
+            {new Date(latest.date).toLocaleDateString(undefined, {
               month: "short",
               day: "numeric",
             })}
@@ -198,7 +199,7 @@ export default function MetricsClient({
                     {formatWeight(m.bodyWeight, weightUnit)}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {new Date(m.date).toLocaleDateString("en-US", {
+                    {new Date(m.date).toLocaleDateString(undefined, {
                       weekday: "short",
                       month: "short",
                       day: "numeric",
