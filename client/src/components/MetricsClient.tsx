@@ -16,34 +16,6 @@ function CloseIcon() {
   );
 }
 
-function UnitToggle({
-  options,
-  value,
-  onChange,
-}: {
-  options: string[];
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <div className="inline-flex rounded-lg overflow-hidden border border-border text-xs">
-      {options.map((opt) => (
-        <button
-          key={opt}
-          onClick={() => onChange(opt)}
-          className={`px-2.5 py-1 transition-colors ${
-            value === opt
-              ? "bg-primary text-primary-foreground font-medium"
-              : "bg-muted text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          {opt}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 export default function MetricsClient({
   initialMetrics,
   initialWeightUnit,
@@ -56,8 +28,8 @@ export default function MetricsClient({
   initialHeightCm: number | null;
 }) {
   const [metrics, setMetrics] = useState<Metric[]>(initialMetrics);
-  const [weightUnit, setWeightUnit] = useState(initialWeightUnit);
-  const [heightUnit, setHeightUnit] = useState(initialHeightUnit);
+  const [weightUnit] = useState(initialWeightUnit);
+  const [heightUnit] = useState(initialHeightUnit);
   const [heightCm, setHeightCm] = useState<number | null>(initialHeightCm);
   const [weight, setWeight] = useState("");
   const [heightInput, setHeightInput] = useState("");
@@ -71,16 +43,6 @@ export default function MetricsClient({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(patch),
     });
-  }
-
-  async function handleWeightUnitChange(unit: string) {
-    setWeightUnit(unit);
-    await patchSettings({ weightUnit: unit });
-  }
-
-  async function handleHeightUnitChange(unit: string) {
-    setHeightUnit(unit);
-    await patchSettings({ heightUnit: unit });
   }
 
   async function logWeight(e: React.FormEvent) {
@@ -136,20 +98,6 @@ export default function MetricsClient({
 
   return (
     <div className="space-y-5">
-      {/* Unit toggles */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Weight</span>
-            <UnitToggle options={["kg", "lb"]} value={weightUnit} onChange={handleWeightUnitChange} />
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Height</span>
-            <UnitToggle options={["cm", "in"]} value={heightUnit} onChange={handleHeightUnitChange} />
-          </div>
-        </div>
-      </div>
-
       {/* Current weight */}
       {latest && (
         <div className="bg-card rounded-2xl p-5 ring-1 ring-foreground/5">
