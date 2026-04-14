@@ -110,6 +110,13 @@ export interface DashboardData {
   currentWeight: number | null;
 }
 
+// Progress
+export interface ProgressPoint {
+  date: string;
+  maxWeight: number;
+  totalVolume: number;
+}
+
 // Settings
 export interface Settings {
   weightUnit: string;

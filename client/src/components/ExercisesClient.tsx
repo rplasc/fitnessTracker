@@ -7,13 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import ExerciseDetail from "@/components/ExerciseDetail";
 
 const CATEGORIES = ["All", "Chest", "Back", "Legs", "Shoulders", "Arms", "Core"];
 
 export default function ExercisesClient({
   initialExercises,
+  weightUnit,
 }: {
   initialExercises: Exercise[];
+  weightUnit: string;
 }) {
   const [exercises, setExercises] = useState<Exercise[]>(initialExercises);
   const [filter, setFilter] = useState("All");
@@ -23,6 +26,17 @@ export default function ExercisesClient({
   const [newCategory, setNewCategory] = useState("Chest");
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
+  const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
+
+  if (selectedExercise) {
+    return (
+      <ExerciseDetail
+        exercise={selectedExercise}
+        weightUnit={weightUnit}
+        onBack={() => setSelectedExercise(null)}
+      />
+    );
+  }
 
   const visible = exercises.filter((e) => {
     const matchCat = filter === "All" || e.category === filter;
@@ -163,16 +177,33 @@ export default function ExercisesClient({
               <h2 className="text-xs font-medium text-muted-foreground mb-2">
                 {category}
               </h2>
-              <div className="bg-card rounded-2xl divide-y divide-border">
+              <div className="bg-card rounded-2xl divide-y divide-border overflow-hidden">
                 {exs.map((ex) => (
-                  <div key={ex.id} className="px-4 py-3 flex items-center justify-between">
+                  <button
+                    key={ex.id}
+                    onClick={() => setSelectedExercise(ex)}
+                    className="w-full px-4 py-3 flex items-center justify-between hover:bg-muted/50 transition-colors text-left cursor-pointer"
+                  >
                     <span className="text-sm text-foreground">{ex.name}</span>
-                    {ex.isCustom && (
-                      <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                        custom
-                      </span>
-                    )}
-                  </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {ex.isCustom && (
+                        <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                          custom
+                        </span>
+                      )}
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="w-3.5 h-3.5 text-muted-foreground"
+                      >
+                        <polyline points="9 18 15 12 9 6" />
+                      </svg>
+                    </div>
+                  </button>
                 ))}
               </div>
             </div>
