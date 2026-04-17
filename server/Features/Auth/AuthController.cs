@@ -153,6 +153,29 @@ public class AuthController(AppDbContext db, ILogger<AuthController> logger) : C
         return NoContent();
     }
 
+    [Authorize]
+    [HttpDelete("data")]
+    public async Task<IActionResult> ResetData()
+    {
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+        var sessions = db.WorkoutSessions.Where(s => s.UserId == userId);
+        db.WorkoutSessions.RemoveRange(sessions);
+
+        var metrics = db.HealthMetrics.Where(m => m.UserId == userId);
+        db.HealthMetrics.RemoveRange(metrics);
+
+        var plans = db.Plans.Where(p => p.UserId == userId);
+        db.Plans.RemoveRange(plans);
+
+        var schedules = db.Schedules.Where(s => s.UserId == userId);
+        db.Schedules.RemoveRange(schedules);
+
+        await db.SaveChangesAsync();
+        logger.LogInformation("User {UserId} reset all data", userId);
+        return NoContent();
+    }
+
     private async Task SignInUser(User user)
     {
         var claims = new List<Claim>
