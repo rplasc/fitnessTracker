@@ -166,31 +166,29 @@ export default function WorkoutLogger({
   }
 
   return (
-    <div className="space-y-5">
-      {/* Session header */}
-      <Card>
-        <CardContent className="p-4 flex items-center justify-between">
-          <div>
-            <p className="text-xs text-muted-foreground">Active session</p>
-            <p className="text-sm font-medium mt-0.5">
-              {new Date(session.startedAt).toLocaleTimeString(undefined, {
-                hour: "numeric",
-                minute: "2-digit",
-              })}
-            </p>
-          </div>
-          <Button
-            onClick={finishSession}
-            disabled={finishing}
-            variant="secondary"
-          >
-            {finishing ? "Finishing…" : "Finish"}
-          </Button>
-        </CardContent>
-      </Card>
+    <div>
+      {/* Session header — tight to picker, they're the same interaction flow */}
+      <div className="flex items-center justify-between py-1 mb-3">
+        <div>
+          <p className="text-xs text-muted-foreground">Active session</p>
+          <p className="text-sm font-medium mt-0.5">
+            {new Date(session.startedAt).toLocaleTimeString(undefined, {
+              hour: "numeric",
+              minute: "2-digit",
+            })}
+          </p>
+        </div>
+        <Button
+          onClick={finishSession}
+          disabled={finishing}
+          variant="secondary"
+        >
+          {finishing ? "Finishing…" : "Finish"}
+        </Button>
+      </div>
 
       {/* Exercise picker */}
-      <Card>
+      <Card className="mb-4">
         <CardContent className="p-4 space-y-3">
           {/* Search */}
           <Input
@@ -273,21 +271,21 @@ export default function WorkoutLogger({
 
       {/* Logged sets */}
       {setsByExercise && Object.keys(setsByExercise).length > 0 && (
-        <div className="bg-card rounded-2xl p-4 space-y-4">
-          <h3 className="font-semibold text-sm">
+        <div className="space-y-4 pt-1 border-t border-border">
+          <h3 className="font-semibold text-sm pt-3">
             Logged Sets ({session.sets.length})
           </h3>
           {Object.entries(setsByExercise).map(([name, sets]) => (
             <div key={name}>
-              <p className="text-sm font-medium text-foreground mb-2">{name}</p>
-              <div className="space-y-1">
+              <p className="text-sm font-medium text-foreground mb-1">{name}</p>
+              <div className="divide-y divide-border">
                 {sets.map((s) => (
                   <div
                     key={s.id}
-                    className="flex items-center justify-between bg-muted rounded-lg px-3 py-2"
+                    className="flex items-center justify-between py-2"
                   >
-                    <span className="text-xs text-muted-foreground">Set {s.setNumber}</span>
-                    <span className="text-sm tabular-nums">
+                    <span className="text-xs text-muted-foreground w-12">Set {s.setNumber}</span>
+                    <span className="text-sm tabular-nums flex-1 text-center">
                       {s.reps} × {toDisplayWeight(s.weight, weightUnit).toFixed(1)} {weightUnit}
                     </span>
                     <Button

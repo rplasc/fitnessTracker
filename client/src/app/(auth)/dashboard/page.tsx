@@ -23,15 +23,15 @@ export default async function DashboardPage() {
   });
 
   return (
-    <div className="space-y-5">
-      {/* Header — compact */}
-      <div>
+    <div>
+      {/* Header — close to primary action */}
+      <div className="mb-5">
         <p className="text-muted-foreground text-xs">{dayName}, {dateStr}</p>
         <h1 className="text-xl font-semibold mt-0.5">Dashboard</h1>
       </div>
 
       {/* Today's Plan + Start Workout — dominant primary card */}
-      <div className="bg-card rounded-2xl p-5 ring-1 ring-foreground/5">
+      <div className="bg-card rounded-2xl p-5 ring-1 ring-foreground/5 mb-8">
         {data?.todayPlan ? (
           <>
             <div className="flex items-center gap-2 mb-1">
@@ -70,7 +70,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Current weight — compact inline row */}
-      <div className="flex items-center justify-between px-1">
+      <div className="flex items-center justify-between px-1 mb-4">
         <div>
           <p className="text-xs text-muted-foreground mb-0.5">Current weight</p>
           {data?.currentWeight != null ? (

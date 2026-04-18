@@ -4,7 +4,6 @@ import { useState } from "react";
 import type { Metric } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
 import { toDisplayWeight, toKg, toDisplayHeight, toCm, formatWeight, formatHeight, weightStep, weightPlaceholder } from "@/lib/units";
 
 function CloseIcon() {
@@ -98,102 +97,85 @@ export default function MetricsClient({
   const latest = metrics[0];
 
   return (
-    <div className="space-y-5">
-      {/* Current weight */}
-      {latest && (
-        <div className="bg-card rounded-2xl p-5 ring-1 ring-foreground/5">
-          <p className="text-xs text-muted-foreground mb-1">Current weight</p>
-          <p className="text-4xl font-bold">
-            {toDisplayWeight(latest.bodyWeight, weightUnit).toFixed(1)}{" "}
-            <span className="text-xl text-muted-foreground font-normal">{weightUnit}</span>
-          </p>
-          <p className="text-muted-foreground text-xs mt-1">
-            Logged{" "}
-            {new Date(latest.date).toLocaleDateString(undefined, {
-              month: "short",
-              day: "numeric",
-            })}
-          </p>
+    <div className="space-y-6">
+      {/* Log weight — primary action first */}
+      <div className="space-y-3">
+        <div className="flex items-baseline justify-between">
+          <h2 className="text-sm font-medium">Log weight</h2>
+          {latest && (
+            <span className="text-xs text-muted-foreground tabular-nums">
+              Last: {toDisplayWeight(latest.bodyWeight, weightUnit).toFixed(1)} {weightUnit} &middot;{" "}
+              {new Date(latest.date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+            </span>
+          )}
         </div>
-      )}
-
-      {/* Height */}
-      <div className="bg-card rounded-2xl p-5 ring-1 ring-foreground/5">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs text-muted-foreground mb-1">Height</p>
-            {heightCm != null ? (
-              <p className="text-lg font-semibold">{formatHeight(heightCm, heightUnit)}</p>
-            ) : (
-              <p className="text-sm text-muted-foreground">Not set</p>
-            )}
-          </div>
-          <button
-            onClick={() => {
-              setEditingHeight((v) => !v);
-              if (heightCm != null) {
-                setHeightInput(toDisplayHeight(heightCm, heightUnit).toFixed(1));
-              }
-            }}
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
-          >
-            {editingHeight ? "Cancel" : heightCm != null ? "Edit" : "Set height"}
-          </button>
-        </div>
-        {editingHeight && (
-          <form onSubmit={saveHeight} className="flex gap-2 mt-3">
-            <Input
-              type="number"
-              min={50}
-              max={300}
-              step={0.1}
-              placeholder={heightUnit === "in" ? "e.g. 70" : "e.g. 175"}
-              value={heightInput}
-              onChange={(e) => setHeightInput(e.target.value)}
-              className="flex-1"
-              autoFocus
-            />
-            <Button type="submit" size="sm">Save</Button>
-          </form>
-        )}
+        <form onSubmit={logWeight} className="flex gap-3">
+          <Input
+            type="number"
+            step={weightStep(weightUnit)}
+            min={1}
+            max={weightUnit === "lb" ? 1100 : 500}
+            placeholder={weightPlaceholder(weightUnit)}
+            value={weight}
+            onChange={(e) => setWeight(e.target.value)}
+            className="flex-1"
+            required
+          />
+          <Button type="submit" disabled={saving}>
+            {saving ? "…" : "Log"}
+          </Button>
+        </form>
+        {error && <p className="text-destructive text-xs">{error}</p>}
       </div>
 
-      {/* Log weight form */}
-      <Card>
-        <CardContent className="p-4 space-y-3">
-          <h3 className="font-medium text-sm text-foreground">Log today&apos;s weight</h3>
-          <form onSubmit={logWeight} className="flex gap-3">
-            <Input
-              type="number"
-              step={weightStep(weightUnit)}
-              min={1}
-              max={weightUnit === "lb" ? 1100 : 500}
-              placeholder={weightPlaceholder(weightUnit)}
-              value={weight}
-              onChange={(e) => setWeight(e.target.value)}
-              className="flex-1"
-              required
-            />
-            <Button type="submit" disabled={saving}>
-              {saving ? "…" : "Log"}
-            </Button>
-          </form>
-          <p className="text-muted-foreground text-xs">
-            Weight in {weightUnit}. Updates today&apos;s entry if already logged.
-          </p>
-          {error && <p className="text-destructive text-xs">{error}</p>}
-        </CardContent>
-      </Card>
+      {/* Height — secondary, inline */}
+      <div className="flex items-center justify-between py-3 border-t border-border">
+        <div>
+          <p className="text-xs text-muted-foreground mb-0.5">Height</p>
+          {heightCm != null ? (
+            <p className="text-sm font-medium">{formatHeight(heightCm, heightUnit)}</p>
+          ) : (
+            <p className="text-sm text-muted-foreground">Not set</p>
+          )}
+        </div>
+        <button
+          onClick={() => {
+            setEditingHeight((v) => !v);
+            if (heightCm != null) {
+              setHeightInput(toDisplayHeight(heightCm, heightUnit).toFixed(1));
+            }
+          }}
+          className="text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
+        >
+          {editingHeight ? "Cancel" : heightCm != null ? "Edit" : "Set"}
+        </button>
+      </div>
+      {editingHeight && (
+        <form onSubmit={saveHeight} className="flex gap-2 -mt-3">
+          <Input
+            type="number"
+            min={50}
+            max={300}
+            step={0.1}
+            placeholder={heightUnit === "in" ? "e.g. 70" : "e.g. 175"}
+            value={heightInput}
+            onChange={(e) => setHeightInput(e.target.value)}
+            className="flex-1"
+            autoFocus
+          />
+          <Button type="submit" size="sm">Save</Button>
+        </form>
+      )}
 
       {/* History */}
-      <div className="space-y-1">
+      <div className="space-y-1 mt-2">
         <h3 className="text-xs font-medium text-muted-foreground mb-2">History</h3>
         {metrics.length === 0 ? (
-          <p className="text-muted-foreground text-sm text-center py-8">No weight entries yet</p>
+          <p className="text-muted-foreground text-sm py-6">Log your first weight above.</p>
         ) : (
-          <div className="bg-card rounded-2xl divide-y divide-border">
+          <div className="divide-y divide-border">
             {metrics.map((m) => (
-              <div key={m.id} className="px-4 py-3 flex items-center justify-between">
+              <div key={m.id} className="py-3 flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium tabular-nums">
                     {formatWeight(m.bodyWeight, weightUnit)}

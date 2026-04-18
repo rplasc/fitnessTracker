@@ -89,14 +89,14 @@ export default function Nav() {
             >
               <span
                 className={`flex items-center justify-center w-10 h-7 rounded-xl transition-colors ${
-                  active ? "bg-muted text-foreground" : "text-muted-foreground"
+                  active ? "text-primary" : "text-muted-foreground"
                 }`}
               >
                 {link.icon}
               </span>
               <span
                 className={`text-[10px] leading-tight transition-colors ${
-                  active ? "text-foreground" : "text-muted-foreground"
+                  active ? "text-primary font-medium" : "text-muted-foreground"
                 }`}
               >
                 {link.label}

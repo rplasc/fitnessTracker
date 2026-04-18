@@ -50,8 +50,7 @@ export default function ExercisesClient({
     return acc;
   }, {});
 
-  async function createExercise(evt: React.FormEvent) {
-    evt.preventDefault();
+  async function createExercise() {
     setError("");
     setCreating(true);
     try {
@@ -78,35 +77,39 @@ export default function ExercisesClient({
   }
 
   return (
-    <div className="space-y-5">
-      {/* Search */}
-      <Input
-        type="text"
-        placeholder="Search exercises…"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
+    <div>
+      {/* Controls group: search → filters → add */}
+      <div className="space-y-3 mb-6">
+        {/* Search */}
+        <Input
+          type="text"
+          placeholder="Search exercises…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
 
-      {/* Category filter */}
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-        {CATEGORIES.map((cat) => (
-          <Button
-            key={cat}
-            variant="outline"
-            size="sm"
-            onClick={() => setFilter(cat)}
-            className={cn(
-              "shrink-0 rounded-full",
-              filter === cat && "bg-muted text-foreground"
-            )}
-          >
-            {cat}
-          </Button>
-        ))}
-      </div>
+        {/* Category filter */}
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+          {CATEGORIES.map((cat) => (
+            <Button
+              key={cat}
+              variant="outline"
+              size="sm"
+              onClick={() => setFilter(cat)}
+              className={cn(
+                "shrink-0 rounded-full",
+                filter === cat
+                  ? "bg-primary/15 text-primary border-primary/30"
+                  : "text-muted-foreground"
+              )}
+            >
+              {cat}
+            </Button>
+          ))}
+        </div>
 
-      {/* Add custom exercise */}
-      <div>
+        {/* Add custom exercise */}
+        <div>
         {!showForm ? (
           <button
             onClick={() => setShowForm(true)}
@@ -149,7 +152,7 @@ export default function ExercisesClient({
                   type="submit"
                   disabled={creating}
                   className="flex-1"
-                  onClick={(e) => createExercise(e as unknown as React.FormEvent)}
+                  onClick={createExercise}
                 >
                   {creating ? "Adding…" : "Add"}
                 </Button>
@@ -165,6 +168,7 @@ export default function ExercisesClient({
             </CardContent>
           </Card>
         )}
+        </div>
       </div>
 
       {/* Exercise list */}
