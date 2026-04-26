@@ -3,6 +3,7 @@ using System;
 using FitTrack.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace server.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260424025510_AddSetMetadata")]
+    partial class AddSetMetadata
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.4");
@@ -35,14 +38,6 @@ namespace server.Data.Migrations
                         .HasColumnType("INTEGER")
                         .HasDefaultValue(false)
                         .HasColumnName("is_custom");
-
-                    b.Property<string>("Modality")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(16)
-                        .HasColumnType("TEXT")
-                        .HasDefaultValue("strength")
-                        .HasColumnName("modality");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -223,12 +218,6 @@ namespace server.Data.Migrations
                         .HasDefaultValue(false)
                         .HasColumnName("onboarding_complete");
 
-                    b.Property<int>("RestSeconds")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
-                        .HasDefaultValue(90)
-                        .HasColumnName("rest_seconds");
-
                     b.Property<int?>("UserId")
                         .HasColumnType("INTEGER")
                         .HasColumnName("user_id");
@@ -322,14 +311,6 @@ namespace server.Data.Migrations
                         .HasColumnType("INTEGER")
                         .HasColumnName("id");
 
-                    b.Property<double?>("DistanceMeters")
-                        .HasColumnType("REAL")
-                        .HasColumnName("distance_meters");
-
-                    b.Property<int?>("DurationSeconds")
-                        .HasColumnType("INTEGER")
-                        .HasColumnName("duration_seconds");
-
                     b.Property<int>("ExerciseId")
                         .HasColumnType("INTEGER")
                         .HasColumnName("exercise_id");
@@ -345,7 +326,7 @@ namespace server.Data.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("notes");
 
-                    b.Property<int?>("Reps")
+                    b.Property<int>("Reps")
                         .HasColumnType("INTEGER")
                         .HasColumnName("reps");
 
@@ -361,7 +342,7 @@ namespace server.Data.Migrations
                         .HasColumnType("INTEGER")
                         .HasColumnName("set_number");
 
-                    b.Property<double?>("Weight")
+                    b.Property<double>("Weight")
                         .HasColumnType("REAL")
                         .HasColumnName("weight");
 

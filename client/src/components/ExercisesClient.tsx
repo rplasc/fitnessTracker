@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Exercise } from "@/lib/types";
+import type { Exercise, Modality } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,7 +9,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import ExerciseDetail from "@/components/ExerciseDetail";
 
-const CATEGORIES = ["All", "Chest", "Back", "Legs", "Shoulders", "Arms", "Core"];
+const CATEGORIES = ["All", "Chest", "Back", "Legs", "Shoulders", "Arms", "Core", "Cardio"];
+
+const MODALITIES: { value: Modality; label: string; help: string }[] = [
+  { value: "strength", label: "Strength", help: "reps × weight" },
+  { value: "cardio", label: "Cardio", help: "duration + distance" },
+  { value: "timed", label: "Timed", help: "duration only (e.g. plank)" },
+];
 
 export default function ExercisesClient({
   initialExercises,
@@ -24,6 +30,7 @@ export default function ExercisesClient({
   const [showForm, setShowForm] = useState(false);
   const [newName, setNewName] = useState("");
   const [newCategory, setNewCategory] = useState("Chest");
+  const [newModality, setNewModality] = useState<Modality>("strength");
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
@@ -57,7 +64,7 @@ export default function ExercisesClient({
       const res = await fetch("/api/v1/exercises", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newName.trim(), category: newCategory }),
+        body: JSON.stringify({ name: newName.trim(), category: newCategory, modality: newModality }),
       });
       if (res.status === 409) {
         setError("An exercise with that name already exists.");
@@ -146,6 +153,27 @@ export default function ExercisesClient({
                   ))}
                 </select>
               </div>
+              <div>
+                <Label className="mb-1">Type</Label>
+                <div className="grid grid-cols-3 gap-1">
+                  {MODALITIES.map((m) => (
+                    <button
+                      key={m.value}
+                      type="button"
+                      onClick={() => setNewModality(m.value)}
+                      className={cn(
+                        "rounded-lg px-2 py-2 text-xs transition-colors text-left",
+                        newModality === m.value
+                          ? "bg-primary/15 text-primary ring-1 ring-primary/30"
+                          : "bg-muted text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <span className="block font-medium">{m.label}</span>
+                      <span className="block text-[10px] opacity-75">{m.help}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
               {error && <p className="text-destructive text-xs">{error}</p>}
               <div className="flex gap-2">
                 <Button
@@ -190,6 +218,11 @@ export default function ExercisesClient({
                   >
                     <span className="text-sm text-foreground">{ex.name}</span>
                     <div className="flex items-center gap-2 shrink-0">
+                      {ex.modality !== "strength" && (
+                        <span className="text-[10px] uppercase tracking-wide bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
+                          {ex.modality}
+                        </span>
+                      )}
                       {ex.isCustom && (
                         <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
                           custom

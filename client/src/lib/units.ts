@@ -38,3 +38,52 @@ export function weightStep(unit: string): number {
 export function weightPlaceholder(unit: string): string {
   return unit === "lb" ? "e.g. 175" : "e.g. 80.5";
 }
+
+// Distance: km when weight is kg, mi when weight is lb.
+const M_TO_MI = 0.000621371;
+const M_TO_KM = 0.001;
+
+export function distanceUnit(weightUnit: string): "km" | "mi" {
+  return weightUnit === "lb" ? "mi" : "km";
+}
+
+export function toDisplayDistance(meters: number, weightUnit: string): number {
+  return weightUnit === "lb" ? meters * M_TO_MI : meters * M_TO_KM;
+}
+
+export function toMeters(value: number, weightUnit: string): number {
+  return weightUnit === "lb" ? value / M_TO_MI : value / M_TO_KM;
+}
+
+export function formatDuration(totalSeconds: number): string {
+  if (!Number.isFinite(totalSeconds) || totalSeconds < 0) return "0:00";
+  const t = Math.round(totalSeconds);
+  const h = Math.floor(t / 3600);
+  const m = Math.floor((t % 3600) / 60);
+  const s = t % 60;
+  if (h > 0) return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+// Pace stored as seconds-per-meter; display as min:ss per km or per mi.
+export function formatPace(secondsPerMeter: number, weightUnit: string): string {
+  if (!Number.isFinite(secondsPerMeter) || secondsPerMeter <= 0) return "—";
+  const secondsPerUnit = weightUnit === "lb"
+    ? secondsPerMeter / M_TO_MI
+    : secondsPerMeter / M_TO_KM;
+  return `${formatDuration(secondsPerUnit)} /${distanceUnit(weightUnit)}`;
+}
+
+// Parse "mm:ss" or "h:mm:ss" or seconds string into seconds.
+export function parseDuration(input: string): number | null {
+  const trimmed = input.trim();
+  if (trimmed.length === 0) return null;
+  const parts = trimmed.split(":").map((p) => p.trim());
+  if (parts.some((p) => p.length === 0 || !/^\d+(\.\d+)?$/.test(p))) return null;
+  const nums = parts.map(Number);
+  if (nums.some((n) => Number.isNaN(n) || n < 0)) return null;
+  if (nums.length === 1) return Math.round(nums[0]);
+  if (nums.length === 2) return Math.round(nums[0] * 60 + nums[1]);
+  if (nums.length === 3) return Math.round(nums[0] * 3600 + nums[1] * 60 + nums[2]);
+  return null;
+}

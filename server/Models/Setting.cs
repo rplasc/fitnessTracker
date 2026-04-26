@@ -8,6 +8,7 @@ public class Setting
     public string HeightUnit { get; set; } = "cm";
     public decimal? HeightCm { get; set; }
     public bool OnboardingComplete { get; set; } = false;
+    public int RestSeconds { get; set; } = 90;
 
     public User? User { get; set; }
 }

@@ -16,6 +16,7 @@ export default async function WorkoutPage() {
       <WorkoutLogger
         initialExercises={exercises}
         weightUnit={settings?.weightUnit ?? "kg"}
+        restSeconds={settings?.restSeconds ?? 90}
       />
     </div>
   );

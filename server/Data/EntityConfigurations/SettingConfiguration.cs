@@ -19,5 +19,7 @@ public class SettingConfiguration : IEntityTypeConfiguration<Setting>
         builder.Property(s => s.HeightCm).HasColumnName("height_cm");
         builder.Property(s => s.OnboardingComplete).HasColumnName("onboarding_complete")
             .IsRequired().HasDefaultValue(false);
+        builder.Property(s => s.RestSeconds).HasColumnName("rest_seconds")
+            .IsRequired().HasDefaultValue(90);
     }
 }

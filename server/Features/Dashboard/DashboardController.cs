@@ -62,12 +62,34 @@ public class DashboardController(AppDbContext db) : ControllerBase
             .Select(g => new DashboardLastWorkoutExercise(
                 g.Key,
                 g.OrderBy(ws => ws.SetNumber)
-                 .Select(ws => $"{ws.Reps}\u00d7{ws.Weight:F1}")
+                 .Select(ws => FormatSetSummary(ws.Exercise.Modality, ws.Reps, ws.Weight, ws.DurationSeconds, ws.DistanceMeters))
                  .ToList()))
             .ToList();
 
         var date = session.StartedAt.ToString("MMM dd", CultureInfo.InvariantCulture);
         return new DashboardLastWorkout(date, exerciseGroups);
+    }
+
+    private static string FormatSetSummary(string modality, int? reps, double? weight, int? durationSec, double? distanceM)
+    {
+        if (modality == "cardio")
+        {
+            var km = (distanceM ?? 0) / 1000.0;
+            return $"{km:F2}km/{FormatHms(durationSec ?? 0)}";
+        }
+        if (modality == "timed")
+        {
+            return FormatHms(durationSec ?? 0);
+        }
+        return $"{reps ?? 0}×{weight ?? 0:F1}";
+    }
+
+    private static string FormatHms(int totalSeconds)
+    {
+        if (totalSeconds < 60) return $"{totalSeconds}s";
+        var m = totalSeconds / 60;
+        var s = totalSeconds % 60;
+        return s == 0 ? $"{m}m" : $"{m}m{s}s";
     }
 
     private async Task<double?> GetCurrentWeightAsync(int userId)

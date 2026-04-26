@@ -9,11 +9,14 @@ export interface MeResponse {
 }
 
 // Exercises
+export type Modality = "strength" | "cardio" | "timed";
+
 export interface Exercise {
   id: number;
   name: string;
   category: string;
   isCustom: boolean;
+  modality: Modality;
 }
 
 // Workouts
@@ -29,9 +32,25 @@ export interface WorkoutSet {
   id: number;
   exerciseId: number;
   exerciseName: string;
-  reps: number;
-  weight: number;
+  exerciseModality: Modality;
+  reps: number | null;
+  weight: number | null;
+  durationSeconds: number | null;
+  distanceMeters: number | null;
   setNumber: number;
+  rpe: number | null;
+  notes: string | null;
+  isWarmup: boolean;
+}
+
+export interface AddSetResponse {
+  id: number;
+  setNumber: number;
+  isWeightPr: boolean;
+  isOneRmPr: boolean;
+  isDistancePr: boolean;
+  isPacePr: boolean;
+  isDurationPr: boolean;
 }
 
 export interface SessionDetail {
@@ -113,8 +132,28 @@ export interface DashboardData {
 // Progress
 export interface ProgressPoint {
   date: string;
-  maxWeight: number;
-  totalVolume: number;
+  modality: Modality;
+  maxWeight: number | null;
+  totalVolume: number | null;
+  estimatedOneRm: number | null;
+  totalDistanceMeters: number | null;
+  avgPaceSecondsPerMeter: number | null;
+  totalDurationSeconds: number | null;
+  maxDurationSeconds: number | null;
+}
+
+export interface PrSummary {
+  modality: Modality;
+  maxWeight: number | null;
+  maxWeightDate: string | null;
+  estimatedOneRm: number | null;
+  oneRmDate: string | null;
+  longestDistanceMeters: number | null;
+  longestDistanceDate: string | null;
+  bestPaceSecondsPerMeter: number | null;
+  bestPaceDate: string | null;
+  longestDurationSeconds: number | null;
+  longestDurationDate: string | null;
 }
 
 // Settings
@@ -122,4 +161,5 @@ export interface Settings {
   weightUnit: string;
   heightUnit: string;
   heightCm: number | null;
+  restSeconds: number;
 }

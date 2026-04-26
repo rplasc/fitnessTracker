@@ -13,6 +13,7 @@ export default async function SettingsPage() {
       <SettingsClient
         initialWeightUnit={settings?.weightUnit ?? "kg"}
         initialHeightUnit={settings?.heightUnit ?? "cm"}
+        initialRestSeconds={settings?.restSeconds ?? 90}
       />
     </div>
   );

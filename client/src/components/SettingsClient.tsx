@@ -34,13 +34,16 @@ function UnitToggle({
 export default function SettingsClient({
   initialWeightUnit,
   initialHeightUnit,
+  initialRestSeconds,
 }: {
   initialWeightUnit: string;
   initialHeightUnit: string;
+  initialRestSeconds: number;
 }) {
   const router = useRouter();
   const [weightUnit, setWeightUnit] = useState(initialWeightUnit);
   const [heightUnit, setHeightUnit] = useState(initialHeightUnit);
+  const [restSeconds, setRestSeconds] = useState(initialRestSeconds);
   const [confirmSignOut, setConfirmSignOut] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetting, setResetting] = useState(false);
@@ -61,6 +64,11 @@ export default function SettingsClient({
   async function handleHeightUnitChange(unit: string) {
     setHeightUnit(unit);
     await patchSettings({ heightUnit: unit });
+  }
+
+  async function handleRestSecondsChange(seconds: number) {
+    setRestSeconds(seconds);
+    await patchSettings({ restSeconds: seconds });
   }
 
   async function handleSignOut() {
@@ -95,6 +103,17 @@ export default function SettingsClient({
           <p className="text-xs text-muted-foreground mt-0.5">Used for your profile height</p>
         </div>
         <UnitToggle options={["cm", "in"]} value={heightUnit} onChange={handleHeightUnitChange} />
+      </div>
+      <div className="flex items-center justify-between px-5 py-4">
+        <div>
+          <p className="text-sm font-medium">Rest timer</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Default countdown after each working set</p>
+        </div>
+        <UnitToggle
+          options={["60", "90", "120", "180"]}
+          value={String(restSeconds)}
+          onChange={(v) => handleRestSecondsChange(parseInt(v, 10))}
+        />
       </div>
 
       {/* Sign out */}

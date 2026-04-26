@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from "react";
 import type { Exercise, ProgressPoint } from "@/lib/types";
-import { toDisplayWeight } from "@/lib/units";
+import {
+  toDisplayWeight,
+  toDisplayDistance,
+  distanceUnit,
+  formatDuration,
+  formatPace,
+} from "@/lib/units";
 
 const W = 300;
 const H = 80;
@@ -12,7 +18,15 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-function LineChart({ values, dates }: { values: number[]; dates: string[] }) {
+function LineChart({
+  values,
+  dates,
+  invert = false,
+}: {
+  values: number[];
+  dates: string[];
+  invert?: boolean;
+}) {
   if (values.length === 0) return null;
 
   const innerW = W - PAD.left - PAD.right;
@@ -21,10 +35,16 @@ function LineChart({ values, dates }: { values: number[]; dates: string[] }) {
   const max = Math.max(...values);
   const range = max - min || 1;
 
-  const pts = values.map((v, i) => ({
-    x: PAD.left + (values.length === 1 ? innerW / 2 : (i / (values.length - 1)) * innerW),
-    y: PAD.top + (1 - (v - min) / range) * innerH,
-  }));
+  const pts = values.map((v, i) => {
+    const norm = (v - min) / range; // 0 = min (worst pace if invert), 1 = max
+    const y = invert
+      ? PAD.top + norm * innerH // lower pace plots higher
+      : PAD.top + (1 - norm) * innerH;
+    return {
+      x: PAD.left + (values.length === 1 ? innerW / 2 : (i / (values.length - 1)) * innerW),
+      y,
+    };
+  });
 
   const linePoints = pts.map((p) => `${p.x},${p.y}`).join(" ");
   const areaPoints = [
@@ -82,32 +102,26 @@ export default function ExerciseDetail({
   weightUnit: string;
   onBack: () => void;
 }) {
-  const [progress, setProgress] = useState<ProgressPoint[] | null>(null);
+  const [data, setData] = useState<{ id: number; points: ProgressPoint[] } | null>(null);
 
   useEffect(() => {
-    setProgress(null);
+    let active = true;
     fetch(`/api/v1/exercises/${exercise.id}/progress`)
       .then((r) => r.json())
-      .then(setProgress);
+      .then((points: ProgressPoint[]) => {
+        if (active) setData({ id: exercise.id, points });
+      });
+    return () => {
+      active = false;
+    };
   }, [exercise.id]);
 
-  const prWeight =
-    progress && progress.length > 0
-      ? Math.max(...progress.map((p) => p.maxWeight))
-      : null;
-
+  const progress = data && data.id === exercise.id ? data.points : null;
   const dates = (progress ?? []).map((p) => p.date);
-  const maxWeightValues = (progress ?? []).map((p) =>
-    toDisplayWeight(p.maxWeight, weightUnit)
-  );
-  const volumeValues = (progress ?? []).map((p) =>
-    toDisplayWeight(p.totalVolume, weightUnit)
-  );
   const sessionCount = progress?.length ?? 0;
 
   return (
     <div className="space-y-5">
-      {/* Header */}
       <div className="flex items-center gap-3">
         <button
           onClick={onBack}
@@ -129,6 +143,8 @@ export default function ExerciseDetail({
         <div className="min-w-0">
           <h2 className="text-xl font-bold truncate">{exercise.name}</h2>
           <p className="text-xs text-muted-foreground">
+            <span className="capitalize">{exercise.modality}</span>
+            {" · "}
             {exercise.category}
             {progress !== null && (
               <>
@@ -146,36 +162,148 @@ export default function ExerciseDetail({
         <div className="bg-card rounded-2xl p-6 ring-1 ring-foreground/5 text-center">
           <p className="text-muted-foreground text-sm">No sets logged yet for this exercise.</p>
         </div>
+      ) : exercise.modality === "strength" ? (
+        <StrengthProgress progress={progress} dates={dates} weightUnit={weightUnit} />
+      ) : exercise.modality === "cardio" ? (
+        <CardioProgress progress={progress} dates={dates} weightUnit={weightUnit} />
       ) : (
-        <>
-          {/* Personal record */}
-          <div className="bg-card rounded-2xl p-5 ring-1 ring-foreground/5">
-            <p className="text-xs text-muted-foreground mb-1">Personal Record</p>
-            <p className="text-4xl font-bold">
-              {toDisplayWeight(prWeight!, weightUnit).toFixed(1)}{" "}
-              <span className="text-xl text-muted-foreground font-normal">{weightUnit}</span>
-            </p>
-          </div>
-
-          {/* Max weight chart */}
-          <div className="bg-card rounded-2xl p-5 ring-1 ring-foreground/5 space-y-3">
-            <div className="flex items-baseline justify-between">
-              <p className="text-sm font-medium">Max Weight</p>
-              <p className="text-xs text-muted-foreground">{weightUnit}</p>
-            </div>
-            <LineChart values={maxWeightValues} dates={dates} />
-          </div>
-
-          {/* Volume chart */}
-          <div className="bg-card rounded-2xl p-5 ring-1 ring-foreground/5 space-y-3">
-            <div className="flex items-baseline justify-between">
-              <p className="text-sm font-medium">Volume</p>
-              <p className="text-xs text-muted-foreground">reps × {weightUnit}</p>
-            </div>
-            <LineChart values={volumeValues} dates={dates} />
-          </div>
-        </>
+        <TimedProgress progress={progress} dates={dates} />
       )}
+    </div>
+  );
+}
+
+function StrengthProgress({
+  progress,
+  dates,
+  weightUnit,
+}: {
+  progress: ProgressPoint[];
+  dates: string[];
+  weightUnit: string;
+}) {
+  const prWeight = Math.max(...progress.map((p) => p.maxWeight ?? 0));
+  const prOneRm = Math.max(...progress.map((p) => p.estimatedOneRm ?? 0));
+  const maxWeightValues = progress.map((p) => toDisplayWeight(p.maxWeight ?? 0, weightUnit));
+  const oneRmValues = progress.map((p) => toDisplayWeight(p.estimatedOneRm ?? 0, weightUnit));
+  const volumeValues = progress.map((p) => toDisplayWeight(p.totalVolume ?? 0, weightUnit));
+
+  return (
+    <>
+      <div className="grid grid-cols-2 gap-3">
+        <Card label="Personal Record" value={`${toDisplayWeight(prWeight, weightUnit).toFixed(1)}`} unit={weightUnit} />
+        <Card label="Est. 1RM" value={`${toDisplayWeight(prOneRm, weightUnit).toFixed(1)}`} unit={weightUnit} />
+      </div>
+      <ChartCard title="Max Weight" subtitle={weightUnit}>
+        <LineChart values={maxWeightValues} dates={dates} />
+      </ChartCard>
+      <ChartCard title="Est. 1RM" subtitle={weightUnit}>
+        <LineChart values={oneRmValues} dates={dates} />
+      </ChartCard>
+      <ChartCard title="Volume" subtitle={`reps × ${weightUnit}`}>
+        <LineChart values={volumeValues} dates={dates} />
+      </ChartCard>
+    </>
+  );
+}
+
+function CardioProgress({
+  progress,
+  dates,
+  weightUnit,
+}: {
+  progress: ProgressPoint[];
+  dates: string[];
+  weightUnit: string;
+}) {
+  const longest = Math.max(...progress.map((p) => p.totalDistanceMeters ?? 0));
+  const paces = progress
+    .map((p) => p.avgPaceSecondsPerMeter)
+    .filter((x): x is number => x !== null && x > 0);
+  const bestPace = paces.length ? Math.min(...paces) : null;
+
+  const distanceValues = progress.map((p) => toDisplayDistance(p.totalDistanceMeters ?? 0, weightUnit));
+  const paceValues = progress.map((p) => p.avgPaceSecondsPerMeter ?? 0);
+
+  return (
+    <>
+      <div className="grid grid-cols-2 gap-3">
+        <Card
+          label="Longest"
+          value={toDisplayDistance(longest, weightUnit).toFixed(2)}
+          unit={distanceUnit(weightUnit)}
+        />
+        <Card
+          label="Best Pace"
+          value={bestPace !== null ? formatPace(bestPace, weightUnit).split(" ")[0] : "—"}
+          unit={bestPace !== null ? `/${distanceUnit(weightUnit)}` : ""}
+        />
+      </div>
+      <ChartCard title="Total Distance" subtitle={distanceUnit(weightUnit)}>
+        <LineChart values={distanceValues} dates={dates} />
+      </ChartCard>
+      <ChartCard title="Average Pace" subtitle={`/${distanceUnit(weightUnit)} (lower is better)`}>
+        <LineChart values={paceValues} dates={dates} invert />
+      </ChartCard>
+    </>
+  );
+}
+
+function TimedProgress({
+  progress,
+  dates,
+}: {
+  progress: ProgressPoint[];
+  dates: string[];
+}) {
+  const longestHold = Math.max(...progress.map((p) => p.maxDurationSeconds ?? 0));
+  const maxValues = progress.map((p) => p.maxDurationSeconds ?? 0);
+  const totalValues = progress.map((p) => p.totalDurationSeconds ?? 0);
+
+  return (
+    <>
+      <div className="bg-card rounded-2xl p-5 ring-1 ring-foreground/5">
+        <p className="text-xs text-muted-foreground mb-1">Longest Hold</p>
+        <p className="text-3xl font-bold">{formatDuration(longestHold)}</p>
+      </div>
+      <ChartCard title="Longest Hold" subtitle="per session">
+        <LineChart values={maxValues} dates={dates} />
+      </ChartCard>
+      <ChartCard title="Total Time" subtitle="per session">
+        <LineChart values={totalValues} dates={dates} />
+      </ChartCard>
+    </>
+  );
+}
+
+function Card({ label, value, unit }: { label: string; value: string; unit: string }) {
+  return (
+    <div className="bg-card rounded-2xl p-5 ring-1 ring-foreground/5">
+      <p className="text-xs text-muted-foreground mb-1">{label}</p>
+      <p className="text-3xl font-bold">
+        {value}{" "}
+        <span className="text-base text-muted-foreground font-normal">{unit}</span>
+      </p>
+    </div>
+  );
+}
+
+function ChartCard({
+  title,
+  subtitle,
+  children,
+}: {
+  title: string;
+  subtitle: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="bg-card rounded-2xl p-5 ring-1 ring-foreground/5 space-y-3">
+      <div className="flex items-baseline justify-between">
+        <p className="text-sm font-medium">{title}</p>
+        <p className="text-xs text-muted-foreground">{subtitle}</p>
+      </div>
+      {children}
     </div>
   );
 }

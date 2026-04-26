@@ -19,7 +19,7 @@ public class SettingsController(AppDbContext db) : ControllerBase
     {
         var userId = GetUserId();
         var setting = await GetOrCreateAsync(userId);
-        return Ok(new SettingsResponse(setting.WeightUnit, setting.HeightUnit, setting.HeightCm));
+        return Ok(new SettingsResponse(setting.WeightUnit, setting.HeightUnit, setting.HeightCm, setting.RestSeconds));
     }
 
     [HttpPatch]
@@ -31,6 +31,9 @@ public class SettingsController(AppDbContext db) : ControllerBase
         if (request.HeightUnit is not null && request.HeightUnit != "cm" && request.HeightUnit != "in")
             return Problem(statusCode: 400, title: "Height unit must be 'cm' or 'in'");
 
+        if (request.RestSeconds is not null && (request.RestSeconds < 15 || request.RestSeconds > 600))
+            return Problem(statusCode: 400, title: "Rest seconds must be between 15 and 600");
+
         var userId = GetUserId();
         var setting = await GetOrCreateAsync(userId);
 
@@ -40,9 +43,11 @@ public class SettingsController(AppDbContext db) : ControllerBase
             setting.HeightUnit = request.HeightUnit;
         if (request.HeightCm.HasValue)
             setting.HeightCm = request.HeightCm;
+        if (request.RestSeconds is not null)
+            setting.RestSeconds = request.RestSeconds.Value;
 
         await db.SaveChangesAsync();
-        return Ok(new SettingsResponse(setting.WeightUnit, setting.HeightUnit, setting.HeightCm));
+        return Ok(new SettingsResponse(setting.WeightUnit, setting.HeightUnit, setting.HeightCm, setting.RestSeconds));
     }
 
     private async Task<Setting> GetOrCreateAsync(int userId)
