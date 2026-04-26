@@ -2,6 +2,7 @@ namespace FitTrack.Api.Features.Workouts;
 
 public record StartSessionResponse(int SessionId);
 public record FinishSessionRequest(string? Notes);
+public record UpdateSessionRequest(string? Notes);
 public record AddSetRequest(
     int SessionId,
     int ExerciseId,

@@ -70,6 +70,27 @@ public class WorkoutsController(AppDbContext db, ILogger<WorkoutsController> log
         return Ok(sessions);
     }
 
+    [HttpPatch("sessions/{sessionId:int}")]
+    public async Task<IActionResult> UpdateSession(int sessionId, [FromBody] UpdateSessionRequest request)
+    {
+        var userId = GetUserId();
+        var session = await db.WorkoutSessions
+            .FirstOrDefaultAsync(s => s.Id == sessionId && s.UserId == userId);
+        if (session is null)
+            return Problem(statusCode: 404, title: "Session not found");
+
+        if (request.Notes is not null)
+        {
+            var trimmed = request.Notes.Trim();
+            session.Notes = trimmed.Length == 0
+                ? null
+                : trimmed.Length > 500 ? trimmed[..500] : trimmed;
+        }
+
+        await db.SaveChangesAsync();
+        return NoContent();
+    }
+
     [HttpDelete("sessions/{sessionId:int}")]
     public async Task<IActionResult> DeleteSession(int sessionId)
     {
