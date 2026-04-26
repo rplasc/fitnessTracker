@@ -4,4 +4,15 @@ public record DashboardTodayPlanExercise(string Name, int Sets, int Reps);
 public record DashboardTodayPlan(int Id, string Name, string? Color, List<DashboardTodayPlanExercise> Exercises);
 public record DashboardLastWorkoutExercise(string Name, List<string> Sets);
 public record DashboardLastWorkout(string Date, List<DashboardLastWorkoutExercise> Exercises);
-public record DashboardResponse(DashboardTodayPlan? TodayPlan, DashboardLastWorkout? LastWorkout, double? CurrentWeight);
+public record DashboardResponse(
+    DashboardTodayPlan? TodayPlan,
+    DashboardLastWorkout? LastWorkout,
+    double? CurrentWeight,
+    int CurrentStreakDays,
+    int? WeeklyWorkoutGoal,
+    int WeeklyWorkoutCount,
+    string WeeklyGoalStartDate,
+    string WeeklyGoalEndDate,
+    double? TargetWeightKg,
+    double? CurrentWeightKg,
+    double? WeightGoalDeltaKg);

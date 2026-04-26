@@ -127,6 +127,14 @@ export interface DashboardData {
   todayPlan: DashboardTodayPlan | null;
   lastWorkout: DashboardLastWorkout | null;
   currentWeight: number | null;
+  currentStreakDays: number;
+  weeklyWorkoutGoal: number | null;
+  weeklyWorkoutCount: number;
+  weeklyGoalStartDate: string;
+  weeklyGoalEndDate: string;
+  targetWeightKg: number | null;
+  currentWeightKg: number | null;
+  weightGoalDeltaKg: number | null;
 }
 
 // Progress
@@ -162,4 +170,6 @@ export interface Settings {
   heightUnit: string;
   heightCm: number | null;
   restSeconds: number;
+  weeklyWorkoutGoal: number | null;
+  targetWeightKg: number | null;
 }

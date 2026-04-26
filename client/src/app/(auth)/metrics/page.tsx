@@ -18,6 +18,7 @@ export default async function MetricsPage() {
         initialWeightUnit={settings?.weightUnit ?? "kg"}
         initialHeightUnit={settings?.heightUnit ?? "cm"}
         initialHeightCm={settings?.heightCm ?? null}
+        initialTargetWeightKg={settings?.targetWeightKg ?? null}
       />
     </div>
   );

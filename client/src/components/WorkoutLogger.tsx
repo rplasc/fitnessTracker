@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useId } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -78,13 +78,24 @@ export default function WorkoutLogger({
   const [moreOpen, setMoreOpen] = useState(false);
   const [addingSet, setAddingSet] = useState(false);
   const [finishing, setFinishing] = useState(false);
+  const [canceling, setCanceling] = useState(false);
   const [prMessage, setPrMessage] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [sessionError, setSessionError] = useState<string | null>(null);
+  const repsId = useId();
+  const weightId = useId();
+  const durationId = useId();
+  const distanceId = useId();
+  const notesId = useId();
 
   useEffect(() => {
     async function findActive() {
       try {
         const res = await fetch("/api/v1/workouts/sessions");
-        if (!res.ok) return;
+        if (!res.ok) {
+          setSessionError("Could not load your active workout.");
+          return;
+        }
         const sessions: WorkoutSession[] = await res.json();
         const active = sessions.find((s) => !s.finishedAt);
         if (active) {
@@ -92,8 +103,12 @@ export default function WorkoutLogger({
           if (detailRes.ok) {
             const detail = await detailRes.json();
             setSession({ id: detail.id, startedAt: detail.startedAt, sets: detail.sets });
+          } else {
+            setSessionError("Could not load your active workout.");
           }
         }
+      } catch {
+        setSessionError("Could not load your active workout.");
       } finally {
         setLoading(false);
       }
@@ -104,23 +119,39 @@ export default function WorkoutLogger({
   function pickExercise(ex: Exercise) {
     setSelectedExercise(ex);
     setSearch("");
+    setFormError(null);
+    setIsWarmup(false);
+    setRpe(null);
+    setNotes("");
+    setMoreOpen(false);
     if (ex.modality === "cardio") {
       setDuration("20:00");
       setDistance("5");
     } else if (ex.modality === "timed") {
       setDuration("0:30");
+      setDistance("");
+    } else {
+      setReps("10");
+      setWeight("0");
+      setDuration("");
+      setDistance("");
     }
   }
 
   async function startSession() {
+    setSessionError(null);
     const res = await fetch("/api/v1/workouts/sessions", { method: "POST" });
-    if (!res.ok) return;
+    if (!res.ok) {
+      setSessionError("Could not start a workout.");
+      return;
+    }
     const data: { sessionId: number } = await res.json();
     setSession({ id: data.sessionId, startedAt: new Date().toISOString(), sets: [] });
   }
 
   async function addSet() {
     if (!session || !selectedExercise) return;
+    setFormError(null);
     setAddingSet(true);
     try {
       const modality: Modality = selectedExercise.modality;
@@ -146,18 +177,30 @@ export default function WorkoutLogger({
       if (modality === "strength") {
         weightKg = toKg(parseFloat(weight) || 0, weightUnit);
         repsNum = parseInt(reps);
-        if (!Number.isFinite(repsNum) || repsNum <= 0) return;
+        if (!Number.isFinite(repsNum) || repsNum <= 0) {
+          setFormError("Enter at least 1 rep.");
+          return;
+        }
         payload = { ...payload, reps: repsNum, weight: weightKg };
       } else if (modality === "cardio") {
         durationSec = parseDuration(duration);
         const distNum = parseFloat(distance);
-        if (durationSec === null || durationSec <= 0) return;
-        if (!Number.isFinite(distNum) || distNum <= 0) return;
+        if (durationSec === null || durationSec <= 0) {
+          setFormError("Enter a valid duration like 20:00.");
+          return;
+        }
+        if (!Number.isFinite(distNum) || distNum <= 0) {
+          setFormError(`Enter a valid distance in ${distanceUnit(weightUnit)}.`);
+          return;
+        }
         distanceM = toMeters(distNum, weightUnit);
         payload = { ...payload, durationSeconds: durationSec, distanceMeters: distanceM };
       } else {
         durationSec = parseDuration(duration);
-        if (durationSec === null || durationSec <= 0) return;
+        if (durationSec === null || durationSec <= 0) {
+          setFormError("Enter a valid duration like 0:30.");
+          return;
+        }
         payload = { ...payload, durationSeconds: durationSec };
       }
 
@@ -166,7 +209,10 @@ export default function WorkoutLogger({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) return;
+      if (!res.ok) {
+        setFormError("Could not log that set. Try again.");
+        return;
+      }
       const newSet: AddSetResponse = await res.json();
 
       const newWorkoutSet: WorkoutSet = {
@@ -214,14 +260,21 @@ export default function WorkoutLogger({
       setRpe(null);
       setNotes("");
       setMoreOpen(false);
+      setFormError(null);
+    } catch {
+      setFormError("Could not log that set. Try again.");
     } finally {
       setAddingSet(false);
     }
   }
 
   const deleteSet = useCallback(async (setId: number) => {
+    setSessionError(null);
     const res = await fetch(`/api/v1/workouts/sets/${setId}`, { method: "DELETE" });
-    if (!res.ok) return;
+    if (!res.ok) {
+      setSessionError("Could not delete that set.");
+      return;
+    }
     setSession((s) =>
       s ? { ...s, sets: s.sets.filter((ws) => ws.id !== setId) } : s
     );
@@ -229,13 +282,48 @@ export default function WorkoutLogger({
 
   async function finishSession() {
     if (!session) return;
+    setSessionError(null);
     setFinishing(true);
     try {
-      await fetch(`/api/v1/workouts/sessions/${session.id}/finish`, { method: "POST" });
+      const res = await fetch(`/api/v1/workouts/sessions/${session.id}/finish`, { method: "POST" });
+      if (!res.ok) {
+        setSessionError("Could not finish this workout.");
+        return;
+      }
       setSession(null);
       setSelectedExercise(null);
+      setPrMessage(null);
+    } catch {
+      setSessionError("Could not finish this workout.");
     } finally {
       setFinishing(false);
+    }
+  }
+
+  async function cancelSession() {
+    if (!session) return;
+
+    const message = session.sets.length > 0
+      ? "Cancel this workout and discard all logged sets?"
+      : "Cancel this workout?";
+
+    if (!window.confirm(message)) return;
+
+    setSessionError(null);
+    setCanceling(true);
+    try {
+      const res = await fetch(`/api/v1/workouts/sessions/${session.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        setSessionError("Could not cancel this workout.");
+        return;
+      }
+      setSession(null);
+      setSelectedExercise(null);
+      setPrMessage(null);
+    } catch {
+      setSessionError("Could not cancel this workout.");
+    } finally {
+      setCanceling(false);
     }
   }
 
@@ -269,6 +357,11 @@ export default function WorkoutLogger({
       <div className="py-16 text-center">
         <h2 className="text-lg font-semibold mb-1">No active session</h2>
         <p className="text-muted-foreground text-sm mb-6">Start a session to begin logging sets</p>
+        {sessionError && (
+          <p className="mb-4 text-xs text-destructive" aria-live="polite">
+            {sessionError}
+          </p>
+        )}
         <Button onClick={startSession} size="lg">
           Start Workout
         </Button>
@@ -286,24 +379,50 @@ export default function WorkoutLogger({
         <PrBanner message={prMessage} onDismiss={() => setPrMessage(null)} />
       )}
 
-      <div className="flex items-center justify-between py-1 mb-3">
+        <div className="flex items-center justify-between py-1 mb-3">
         <div>
           <p className="text-xs text-muted-foreground">Active session</p>
-          <p className="text-sm font-medium mt-0.5">
-            {new Date(session.startedAt).toLocaleTimeString(undefined, {
-              hour: "numeric",
-              minute: "2-digit",
-            })}
-          </p>
+          <div className="mt-0.5 flex items-center gap-2 text-sm">
+            <p className="font-medium">
+              {new Date(session.startedAt).toLocaleTimeString(undefined, {
+                hour: "numeric",
+                minute: "2-digit",
+              })}
+            </p>
+            <span className="text-xs text-muted-foreground">
+              {session.sets.length} {session.sets.length === 1 ? "set" : "sets"}
+            </span>
+          </div>
         </div>
-        <Button
-          onClick={finishSession}
-          disabled={finishing}
-          variant="secondary"
-        >
-          {finishing ? "Finishing…" : "Finish"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={cancelSession}
+            disabled={canceling || finishing}
+            variant="ghost"
+          >
+            {canceling ? "Canceling…" : "Cancel"}
+          </Button>
+          <Button
+            onClick={finishSession}
+            disabled={finishing || canceling || session.sets.length === 0}
+            variant="secondary"
+          >
+            {finishing ? "Finishing…" : "Finish"}
+          </Button>
+        </div>
       </div>
+
+      {sessionError && (
+        <p className="mb-3 text-xs text-destructive" aria-live="polite">
+          {sessionError}
+        </p>
+      )}
+
+      {session.sets.length === 0 && (
+        <p className="text-xs text-muted-foreground mb-3">
+          Add at least one set before finishing this workout.
+        </p>
+      )}
 
       <Card className="mb-4">
         <CardContent className="p-4 space-y-3">
@@ -313,14 +432,20 @@ export default function WorkoutLogger({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+          {!selectedExercise && (
+            <p className="text-xs text-muted-foreground">
+              Choose an exercise, then log one set at a time.
+            </p>
+          )}
 
           {!selectedExercise && (
             <div className="max-h-48 overflow-y-auto space-y-1">
               {filtered.map((ex) => (
                 <button
                   key={ex.id}
+                  type="button"
                   onClick={() => pickExercise(ex)}
-                  className="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-muted transition-colors flex justify-between items-center"
+                  className="flex min-h-11 w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                 >
                   <span className="text-foreground">{ex.name}</span>
                   <span className="text-muted-foreground text-xs flex items-center gap-2">
@@ -342,10 +467,20 @@ export default function WorkoutLogger({
           {selectedExercise && modality && (
             <>
               <div className="flex items-center justify-between">
-                <p className="text-lg font-bold text-foreground">{selectedExercise.name}</p>
+                <div>
+                  <p className="text-lg font-bold text-foreground">{selectedExercise.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {selectedExercise.category}
+                    {modality !== "strength" ? ` · ${modality}` : ""}
+                  </p>
+                </div>
                 <button
-                  onClick={() => setSelectedExercise(null)}
-                  className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+                  type="button"
+                  onClick={() => {
+                    setSelectedExercise(null);
+                    setFormError(null);
+                  }}
+                  className="min-h-11 rounded-lg px-2 text-xs text-muted-foreground underline underline-offset-2 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                 >
                   Change
                 </button>
@@ -354,18 +489,21 @@ export default function WorkoutLogger({
               {modality === "strength" && (
                 <div className="flex gap-3">
                   <div className="flex-1">
-                    <label className="text-xs text-muted-foreground mb-1 block">Reps</label>
+                    <label htmlFor={repsId} className="text-xs text-muted-foreground mb-1 block">Reps</label>
                     <Input
+                      id={repsId}
                       type="number"
                       min={1}
                       value={reps}
                       onChange={(e) => setReps(e.target.value)}
                       className="text-center text-2xl font-bold"
+                      aria-invalid={Boolean(formError)}
                     />
                   </div>
                   <div className="flex-1">
-                    <label className="text-xs text-muted-foreground mb-1 block">Weight ({weightUnit})</label>
+                    <label htmlFor={weightId} className="text-xs text-muted-foreground mb-1 block">Weight ({weightUnit})</label>
                     <Input
+                      id={weightId}
                       type="number"
                       min={0}
                       step={0.5}
@@ -380,25 +518,29 @@ export default function WorkoutLogger({
               {modality === "cardio" && (
                 <div className="flex gap-3">
                   <div className="flex-1">
-                    <label className="text-xs text-muted-foreground mb-1 block">Duration (mm:ss)</label>
+                    <label htmlFor={durationId} className="text-xs text-muted-foreground mb-1 block">Duration (mm:ss)</label>
                     <Input
+                      id={durationId}
                       type="text"
                       inputMode="numeric"
                       value={duration}
                       onChange={(e) => setDuration(e.target.value)}
                       placeholder="20:00"
                       className="text-center text-2xl font-bold"
+                      aria-invalid={Boolean(formError)}
                     />
                   </div>
                   <div className="flex-1">
-                    <label className="text-xs text-muted-foreground mb-1 block">Distance ({distanceUnit(weightUnit)})</label>
+                    <label htmlFor={distanceId} className="text-xs text-muted-foreground mb-1 block">Distance ({distanceUnit(weightUnit)})</label>
                     <Input
+                      id={distanceId}
                       type="number"
                       min={0}
                       step={0.01}
                       value={distance}
                       onChange={(e) => setDistance(e.target.value)}
                       className="text-center text-2xl font-bold"
+                      aria-invalid={Boolean(formError)}
                     />
                   </div>
                 </div>
@@ -406,14 +548,16 @@ export default function WorkoutLogger({
 
               {modality === "timed" && (
                 <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Duration (mm:ss)</label>
+                  <label htmlFor={durationId} className="text-xs text-muted-foreground mb-1 block">Duration (mm:ss)</label>
                   <Input
+                    id={durationId}
                     type="text"
                     inputMode="numeric"
                     value={duration}
                     onChange={(e) => setDuration(e.target.value)}
                     placeholder="0:30"
                     className="text-center text-2xl font-bold"
+                    aria-invalid={Boolean(formError)}
                   />
                 </div>
               )}
@@ -422,7 +566,8 @@ export default function WorkoutLogger({
                 <button
                   type="button"
                   onClick={() => setIsWarmup((v) => !v)}
-                  className={`text-xs font-medium px-2.5 py-1 rounded-lg transition-colors ${
+                  aria-pressed={isWarmup}
+                  className={`min-h-11 rounded-lg px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 ${
                     isWarmup
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted text-muted-foreground hover:text-foreground"
@@ -433,7 +578,7 @@ export default function WorkoutLogger({
                 <button
                   type="button"
                   onClick={() => setMoreOpen((v) => !v)}
-                  className="text-xs font-medium px-2.5 py-1 rounded-lg bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                  className="min-h-11 rounded-lg bg-muted px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                   aria-expanded={moreOpen}
                 >
                   {moreOpen ? "Hide RPE & notes" : "RPE & notes"}
@@ -451,7 +596,8 @@ export default function WorkoutLogger({
                           key={v}
                           type="button"
                           onClick={() => setRpe(rpe === v ? null : v)}
-                          className={`text-xs font-medium w-9 h-8 rounded-lg transition-colors ${
+                          aria-pressed={rpe === v}
+                          className={`h-11 min-w-11 rounded-lg text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 ${
                             rpe === v
                               ? "bg-primary text-primary-foreground"
                               : "bg-muted text-muted-foreground hover:text-foreground"
@@ -463,8 +609,9 @@ export default function WorkoutLogger({
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">Notes</label>
+                    <label htmlFor={notesId} className="text-xs text-muted-foreground mb-1 block">Notes</label>
                     <Input
+                      id={notesId}
                       type="text"
                       value={notes}
                       maxLength={200}
@@ -473,6 +620,12 @@ export default function WorkoutLogger({
                     />
                   </div>
                 </div>
+              )}
+
+              {formError && (
+                <p className="text-xs text-destructive" aria-live="polite">
+                  {formError}
+                </p>
               )}
 
               <Button
@@ -497,7 +650,7 @@ export default function WorkoutLogger({
               <p className="text-sm font-medium text-foreground mb-1">{name}</p>
               <div className="divide-y divide-border">
                 {sets.map((s) => (
-                  <div key={s.id} className="py-2">
+                  <div key={s.id} className="py-2.5">
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground w-16 flex items-center gap-1">
                         <span>Set {s.setNumber}</span>

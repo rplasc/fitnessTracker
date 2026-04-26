@@ -818,3 +818,4 @@ Claude.md
 dotnet-api-design.md
 .claude/*
 *.db*
+.dotnet

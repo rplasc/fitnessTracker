@@ -32,9 +32,13 @@ public class WorkoutsController(AppDbContext db, ILogger<WorkoutsController> log
     {
         var userId = GetUserId();
         var session = await db.WorkoutSessions
+            .Include(s => s.Sets)
             .FirstOrDefaultAsync(s => s.Id == sessionId && s.UserId == userId);
         if (session is null)
             return Problem(statusCode: 404, title: "Session not found");
+
+        if (session.Sets.Count == 0)
+            return Problem(statusCode: 400, title: "Add at least one set before finishing a workout");
 
         session.FinishedAt = DateTime.UtcNow;
         await db.SaveChangesAsync();

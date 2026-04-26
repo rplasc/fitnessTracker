@@ -7,6 +7,8 @@ public class Setting
     public string WeightUnit { get; set; } = "kg";
     public string HeightUnit { get; set; } = "cm";
     public decimal? HeightCm { get; set; }
+    public int? WeeklyWorkoutGoal { get; set; }
+    public decimal? TargetWeightKg { get; set; }
     public bool OnboardingComplete { get; set; } = false;
     public int RestSeconds { get; set; } = 90;
 

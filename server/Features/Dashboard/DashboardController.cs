@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Security.Claims;
 using FitTrack.Api.Data;
+using FitTrack.Api.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -18,16 +19,37 @@ public class DashboardController(AppDbContext db) : ControllerBase
     public async Task<IActionResult> Get()
     {
         var userId = GetUserId();
+        var now = DateTime.Now;
+        var settings = await db.Settings.FirstOrDefaultAsync(s => s.UserId == userId);
         var todayPlan = await GetTodayPlanAsync(userId);
         var lastWorkout = await GetLastWorkoutAsync(userId);
         var currentWeight = await GetCurrentWeightAsync(userId);
+        var currentStreakDays = await GetCurrentStreakDaysAsync(userId, now);
+        var (weeklyGoalStart, weeklyGoalEnd) = GetWeekRange(now);
+        var weeklyWorkoutCount = await GetWeeklyWorkoutCountAsync(userId, weeklyGoalStart, weeklyGoalEnd);
+        var targetWeightKg = settings?.TargetWeightKg is null ? null : (double?)settings.TargetWeightKg.Value;
+        var currentWeightKg = currentWeight;
+        var weightGoalDeltaKg = targetWeightKg is null || currentWeightKg is null
+            ? (double?)null
+            : currentWeightKg.Value - targetWeightKg.Value;
 
-        return Ok(new DashboardResponse(todayPlan, lastWorkout, currentWeight));
+        return Ok(new DashboardResponse(
+            todayPlan,
+            lastWorkout,
+            currentWeight,
+            currentStreakDays,
+            settings?.WeeklyWorkoutGoal,
+            weeklyWorkoutCount,
+            weeklyGoalStart.ToString("yyyy-MM-dd"),
+            weeklyGoalEnd.ToString("yyyy-MM-dd"),
+            targetWeightKg,
+            currentWeightKg,
+            weightGoalDeltaKg));
     }
 
     private async Task<DashboardTodayPlan?> GetTodayPlanAsync(int userId)
     {
-        var dayOfWeek = (int)DateTime.UtcNow.DayOfWeek;
+        var dayOfWeek = (int)DateTime.Now.DayOfWeek;
 
         var schedule = await db.Schedules
             .Include(s => s.Plan)
@@ -100,5 +122,65 @@ public class DashboardController(AppDbContext db) : ControllerBase
             .FirstOrDefaultAsync();
 
         return latest?.BodyWeight;
+    }
+
+    private async Task<int> GetCurrentStreakDaysAsync(int userId, DateTime now)
+    {
+        var finishedWorkoutDates = await db.WorkoutSessions
+            .Where(s => s.UserId == userId && s.FinishedAt != null)
+            .OrderByDescending(s => s.FinishedAt)
+            .Select(s => s.FinishedAt!.Value)
+            .ToListAsync();
+
+        if (finishedWorkoutDates.Count == 0)
+            return 0;
+
+        var workoutDays = finishedWorkoutDates
+            .Select(dt => DateOnly.FromDateTime(dt.ToLocalTime()))
+            .Distinct()
+            .OrderByDescending(d => d)
+            .ToList();
+
+        if (workoutDays.Count == 0)
+            return 0;
+
+        var today = DateOnly.FromDateTime(now);
+        var yesterday = today.AddDays(-1);
+        var mostRecent = workoutDays[0];
+
+        if (mostRecent != today && mostRecent != yesterday)
+            return 0;
+
+        var streak = 1;
+        for (var i = 1; i < workoutDays.Count; i++)
+        {
+            if (workoutDays[i] != workoutDays[i - 1].AddDays(-1))
+                break;
+            streak++;
+        }
+
+        return streak;
+    }
+
+    private async Task<int> GetWeeklyWorkoutCountAsync(int userId, DateOnly weekStart, DateOnly weekEnd)
+    {
+        var finishedWorkoutDates = await db.WorkoutSessions
+            .Where(s => s.UserId == userId && s.FinishedAt != null)
+            .Select(s => s.FinishedAt!.Value)
+            .ToListAsync();
+
+        return finishedWorkoutDates.Count(dt =>
+        {
+            var localDay = DateOnly.FromDateTime(dt.ToLocalTime());
+            return localDay >= weekStart && localDay <= weekEnd;
+        });
+    }
+
+    private static (DateOnly Start, DateOnly End) GetWeekRange(DateTime now)
+    {
+        var today = DateOnly.FromDateTime(now);
+        var diff = ((int)today.DayOfWeek + 6) % 7;
+        var start = today.AddDays(-diff);
+        return (start, start.AddDays(6));
     }
 }

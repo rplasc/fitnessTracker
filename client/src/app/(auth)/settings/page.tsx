@@ -14,6 +14,7 @@ export default async function SettingsPage() {
         initialWeightUnit={settings?.weightUnit ?? "kg"}
         initialHeightUnit={settings?.heightUnit ?? "cm"}
         initialRestSeconds={settings?.restSeconds ?? 90}
+        initialWeeklyWorkoutGoal={settings?.weeklyWorkoutGoal ?? null}
       />
     </div>
   );

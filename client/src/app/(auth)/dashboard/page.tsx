@@ -7,6 +7,21 @@ const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export const metadata = { title: "Dashboard — FitTrack" };
 
+function formatShortDate(isoDate: string): string {
+  return new Date(`${isoDate}T00:00:00`).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function formatWeightGoalDelta(deltaKg: number, weightUnit: string): string {
+  const abs = Math.abs(deltaKg);
+  if (abs < 0.05) return "On target";
+
+  const label = formatWeight(abs, weightUnit);
+  return deltaKg > 0 ? `${label} above target` : `${label} below target`;
+}
+
 export default async function DashboardPage() {
   const [data, settings] = await Promise.all([
     serverFetch<DashboardData>("/api/v1/dashboard"),
@@ -67,6 +82,80 @@ export default async function DashboardPage() {
         >
           Start Workout
         </Link>
+
+        <div className="mt-4 pt-4 border-t border-border space-y-3">
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <p className="text-[11px] text-muted-foreground">Streak</p>
+              <p className="text-lg font-semibold tabular-nums">
+                {data?.currentStreakDays ?? 0}
+                <span className="text-sm text-muted-foreground font-normal ml-1">days</span>
+              </p>
+            </div>
+            <div>
+              <p className="text-[11px] text-muted-foreground">This week</p>
+              <p className="text-lg font-semibold tabular-nums">
+                {data?.weeklyWorkoutCount ?? 0}
+                {data?.weeklyWorkoutGoal ? (
+                  <span className="text-sm text-muted-foreground font-normal">/{data.weeklyWorkoutGoal}</span>
+                ) : null}
+              </p>
+            </div>
+            <div>
+              <p className="text-[11px] text-muted-foreground">Weight goal</p>
+              <p className="text-sm font-semibold leading-6">
+                {data?.targetWeightKg != null ? formatWeight(data.targetWeightKg, weightUnit) : "Not set"}
+              </p>
+            </div>
+          </div>
+
+          {(data?.weeklyWorkoutGoal || data?.targetWeightKg != null) ? (
+            <div className="space-y-1">
+              {data?.weeklyWorkoutGoal ? (
+                <p className="text-xs text-muted-foreground">
+                  Weekly goal: {data.weeklyWorkoutCount}/{data.weeklyWorkoutGoal} workouts
+                  {" · "}
+                  {formatShortDate(data.weeklyGoalStartDate)}-{formatShortDate(data.weeklyGoalEndDate)}
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Set a weekly workout goal in Settings.
+                </p>
+              )}
+              {data?.targetWeightKg != null ? (
+                data.currentWeightKg != null && data.weightGoalDeltaKg != null ? (
+                  <p className="text-xs text-muted-foreground">
+                    Current: {formatWeight(data.currentWeightKg, weightUnit)}
+                    {" · "}
+                    {formatWeightGoalDelta(data.weightGoalDeltaKg, weightUnit)}
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Set a current body weight to compare against your target.
+                  </p>
+                )
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Add a target weight from the Weight tab.
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs text-muted-foreground">
+                Add a weekly goal or target weight to keep momentum visible here.
+              </p>
+              <div className="flex items-center gap-3 shrink-0">
+                <Link href="/settings" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  Weekly goal
+                </Link>
+                <Link href="/metrics" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  Target weight
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Current weight — compact inline row */}

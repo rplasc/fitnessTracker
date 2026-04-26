@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text.Json;
 using FitTrack.Api.Data;
 using FitTrack.Api.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -19,35 +20,120 @@ public class SettingsController(AppDbContext db) : ControllerBase
     {
         var userId = GetUserId();
         var setting = await GetOrCreateAsync(userId);
-        return Ok(new SettingsResponse(setting.WeightUnit, setting.HeightUnit, setting.HeightCm, setting.RestSeconds));
+        return Ok(new SettingsResponse(
+            setting.WeightUnit,
+            setting.HeightUnit,
+            setting.HeightCm,
+            setting.RestSeconds,
+            setting.WeeklyWorkoutGoal,
+            setting.TargetWeightKg));
     }
 
     [HttpPatch]
-    public async Task<IActionResult> Patch([FromBody] PatchSettingsRequest request)
+    public async Task<IActionResult> Patch([FromBody] JsonElement request)
     {
-        if (request.WeightUnit is not null && request.WeightUnit != "kg" && request.WeightUnit != "lb")
+        string? weightUnit = null;
+        string? heightUnit = null;
+        decimal? heightCm = null;
+        int? restSeconds = null;
+        int? weeklyWorkoutGoal = null;
+        decimal? targetWeightKg = null;
+
+        var hasWeightUnit = TryGetString(request, "weightUnit", out weightUnit);
+        var hasHeightUnit = TryGetString(request, "heightUnit", out heightUnit);
+        var hasHeightCm = TryGetDecimal(request, "heightCm", out heightCm);
+        var hasRestSeconds = TryGetInt(request, "restSeconds", out restSeconds);
+        var hasWeeklyWorkoutGoal = TryGetInt(request, "weeklyWorkoutGoal", out weeklyWorkoutGoal);
+        var hasTargetWeightKg = TryGetDecimal(request, "targetWeightKg", out targetWeightKg);
+
+        if (hasWeightUnit && weightUnit is not null && weightUnit != "kg" && weightUnit != "lb")
             return Problem(statusCode: 400, title: "Weight unit must be 'kg' or 'lb'");
 
-        if (request.HeightUnit is not null && request.HeightUnit != "cm" && request.HeightUnit != "in")
+        if (hasHeightUnit && heightUnit is not null && heightUnit != "cm" && heightUnit != "in")
             return Problem(statusCode: 400, title: "Height unit must be 'cm' or 'in'");
 
-        if (request.RestSeconds is not null && (request.RestSeconds < 15 || request.RestSeconds > 600))
+        if (hasRestSeconds && restSeconds is not null && (restSeconds < 15 || restSeconds > 600))
             return Problem(statusCode: 400, title: "Rest seconds must be between 15 and 600");
+
+        if (hasWeeklyWorkoutGoal && weeklyWorkoutGoal is not null && (weeklyWorkoutGoal < 1 || weeklyWorkoutGoal > 14))
+            return Problem(statusCode: 400, title: "Weekly workout goal must be between 1 and 14");
+
+        if (hasTargetWeightKg && targetWeightKg is not null && targetWeightKg <= 0)
+            return Problem(statusCode: 400, title: "Target weight must be greater than 0");
 
         var userId = GetUserId();
         var setting = await GetOrCreateAsync(userId);
 
-        if (request.WeightUnit is not null)
-            setting.WeightUnit = request.WeightUnit;
-        if (request.HeightUnit is not null)
-            setting.HeightUnit = request.HeightUnit;
-        if (request.HeightCm.HasValue)
-            setting.HeightCm = request.HeightCm;
-        if (request.RestSeconds is not null)
-            setting.RestSeconds = request.RestSeconds.Value;
+        if (hasWeightUnit && weightUnit is not null)
+            setting.WeightUnit = weightUnit;
+        if (hasHeightUnit && heightUnit is not null)
+            setting.HeightUnit = heightUnit;
+        if (hasHeightCm)
+            setting.HeightCm = heightCm;
+        if (hasRestSeconds && restSeconds is not null)
+            setting.RestSeconds = restSeconds.Value;
+        if (hasWeeklyWorkoutGoal)
+            setting.WeeklyWorkoutGoal = weeklyWorkoutGoal;
+        if (hasTargetWeightKg)
+            setting.TargetWeightKg = targetWeightKg;
 
         await db.SaveChangesAsync();
-        return Ok(new SettingsResponse(setting.WeightUnit, setting.HeightUnit, setting.HeightCm, setting.RestSeconds));
+        return Ok(new SettingsResponse(
+            setting.WeightUnit,
+            setting.HeightUnit,
+            setting.HeightCm,
+            setting.RestSeconds,
+            setting.WeeklyWorkoutGoal,
+            setting.TargetWeightKg));
+    }
+
+    private static bool TryGetString(JsonElement root, string propertyName, out string? value)
+    {
+        value = null;
+        if (!root.TryGetProperty(propertyName, out var property))
+            return false;
+
+        if (property.ValueKind == JsonValueKind.Null)
+            return true;
+
+        value = property.GetString();
+        return true;
+    }
+
+    private static bool TryGetInt(JsonElement root, string propertyName, out int? value)
+    {
+        value = null;
+        if (!root.TryGetProperty(propertyName, out var property))
+            return false;
+
+        if (property.ValueKind == JsonValueKind.Null)
+            return true;
+
+        if (property.ValueKind == JsonValueKind.Number && property.TryGetInt32(out var parsed))
+        {
+            value = parsed;
+            return true;
+        }
+
+        throw new JsonException($"Property '{propertyName}' must be an integer or null.");
+    }
+
+    private static bool TryGetDecimal(JsonElement root, string propertyName, out decimal? value)
+    {
+        value = null;
+        if (!root.TryGetProperty(propertyName, out var property))
+            return false;
+
+        if (property.ValueKind == JsonValueKind.Null)
+            return true;
+
+        if (property.ValueKind == JsonValueKind.Number && property.TryGetDecimal(out var parsed))
+        {
+            value = parsed;
+            return true;
+        }
+
+        throw new JsonException($"Property '{propertyName}' must be a number or null.");
     }
 
     private async Task<Setting> GetOrCreateAsync(int userId)

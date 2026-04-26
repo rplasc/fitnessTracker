@@ -17,6 +17,8 @@ public class SettingConfiguration : IEntityTypeConfiguration<Setting>
         builder.Property(s => s.HeightUnit).HasColumnName("height_unit").IsRequired()
             .HasMaxLength(2).HasDefaultValue("cm");
         builder.Property(s => s.HeightCm).HasColumnName("height_cm");
+        builder.Property(s => s.WeeklyWorkoutGoal).HasColumnName("weekly_workout_goal");
+        builder.Property(s => s.TargetWeightKg).HasColumnName("target_weight_kg");
         builder.Property(s => s.OnboardingComplete).HasColumnName("onboarding_complete")
             .IsRequired().HasDefaultValue(false);
         builder.Property(s => s.RestSeconds).HasColumnName("rest_seconds")
