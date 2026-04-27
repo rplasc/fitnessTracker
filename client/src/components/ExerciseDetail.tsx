@@ -180,7 +180,7 @@ export default function ExerciseDetail({
         <p className="text-sm text-muted-foreground py-8">Loading…</p>
       ) : progress.length === 0 ? (
         <p className="text-sm text-muted-foreground py-8">
-          No sets logged yet. Log one from the Workout tab.
+          Log a set to start tracking.
         </p>
       ) : exercise.modality === "strength" ? (
         <StrengthView progress={progress} weightUnit={weightUnit} />

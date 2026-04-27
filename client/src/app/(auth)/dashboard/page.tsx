@@ -5,7 +5,7 @@ import { formatWeight } from "@/lib/units";
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-export const metadata = { title: "Dashboard — FitTrack" };
+export const metadata = { title: "Dashboard - FitTrack" };
 
 function formatShortDate(isoDate: string): string {
   return new Date(`${isoDate}T00:00:00`).toLocaleDateString("en-US", {
@@ -29,7 +29,6 @@ export default async function DashboardPage() {
   ]);
 
   const weightUnit = settings?.weightUnit ?? "kg";
-
   const today = new Date();
   const dayName = DAY_NAMES[today.getDay()];
   const dateStr = today.toLocaleDateString("en-US", {
@@ -37,164 +36,159 @@ export default async function DashboardPage() {
     day: "numeric",
   });
 
-  return (
-    <div>
-      {/* Header — close to primary action */}
-      <div className="mb-5">
-        <p className="text-muted-foreground text-xs">{dayName}, {dateStr}</p>
-        <h1 className="text-xl font-semibold mt-0.5">Dashboard</h1>
-      </div>
+  const weekRange =
+    data?.weeklyWorkoutGoal != null
+      ? `${formatShortDate(data.weeklyGoalStartDate)}-${formatShortDate(data.weeklyGoalEndDate)}`
+      : null;
 
-      {/* Today's Plan + Start Workout — dominant primary card */}
-      <div className="bg-card rounded-2xl p-5 ring-1 ring-foreground/5 mb-8">
-        {data?.todayPlan ? (
-          <>
-            <div className="flex items-center gap-2 mb-1">
-              {data.todayPlan.color && (
-                <span
-                  className="w-2 h-2 rounded-full shrink-0"
-                  style={{ backgroundColor: data.todayPlan.color }}
-                />
-              )}
-              <p className="text-xs text-muted-foreground">Today&apos;s plan</p>
-            </div>
-            <h2 className="text-xl font-bold mb-3">{data.todayPlan.name}</h2>
-            <ul className="space-y-1 mb-4">
+  const hasStreak = (data?.currentStreakDays ?? 0) > 0;
+  const hasWeeklyGoal = data?.weeklyWorkoutGoal != null;
+  const hasCurrentWeight = data?.currentWeight != null;
+  const hasTargetWeight = data?.targetWeightKg != null;
+
+  const statItems = [
+    hasStreak ? `Streak ${data?.currentStreakDays} days` : null,
+    hasWeeklyGoal ? `This week ${data?.weeklyWorkoutCount}/${data?.weeklyWorkoutGoal}` : null,
+    hasCurrentWeight ? `Weight ${formatWeight(data.currentWeight!, weightUnit)}` : null,
+  ].filter(Boolean) as string[];
+
+  const goalItems = [
+    hasWeeklyGoal
+      ? `Weekly goal ${data?.weeklyWorkoutCount}/${data?.weeklyWorkoutGoal}${
+          weekRange ? ` - ${weekRange}` : ""
+        }`
+      : null,
+    hasTargetWeight
+      ? data?.currentWeightKg != null && data.weightGoalDeltaKg != null
+        ? `Target ${formatWeight(data.targetWeightKg!, weightUnit)} - ${formatWeightGoalDelta(
+            data.weightGoalDeltaKg,
+            weightUnit
+          )}`
+        : `Target ${formatWeight(data.targetWeightKg!, weightUnit)}`
+      : null,
+  ].filter(Boolean) as string[];
+
+  return (
+    <div className="space-y-6">
+      <header className="space-y-1">
+        <p className="text-xs text-muted-foreground">
+          {dayName}, {dateStr}
+        </p>
+        <h1 className="text-xl font-semibold tracking-tight">Dashboard</h1>
+      </header>
+
+      <section className="space-y-4 border-b border-border pb-5">
+        <div className="space-y-4">
+          <div className="space-y-1">
+            <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+              Today
+            </p>
+            {data?.todayPlan ? (
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  {data.todayPlan.color ? (
+                    <span
+                      className="h-2 w-2 shrink-0 rounded-full"
+                      style={{ backgroundColor: data.todayPlan.color }}
+                    />
+                  ) : null}
+                  <h2 className="text-lg font-semibold">{data.todayPlan.name}</h2>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {data.todayPlan.exercises.length} exercises scheduled
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                <h2 className="text-lg font-semibold">
+                  {data?.lastWorkout ? "No plan scheduled" : "Ready to log your first workout?"}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  {data?.lastWorkout
+                    ? "Start a session and log sets as you go."
+                    : "No plan required. Start a session and log sets as you go."}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {data?.todayPlan ? (
+            <ul className="border-t border-border pt-3">
               {data.todayPlan.exercises.map((ex) => (
-                <li key={ex.name} className="flex justify-between text-sm">
-                  <span className="text-foreground">{ex.name}</span>
-                  <span className="text-muted-foreground">{ex.sets}×{ex.reps}</span>
+                <li
+                  key={ex.name}
+                  className="flex items-baseline justify-between gap-3 py-1.5 text-sm"
+                >
+                  <span className="min-w-0 flex-1">{ex.name}</span>
+                  <span className="shrink-0 tabular-nums text-muted-foreground">
+                    {ex.sets}x{ex.reps}
+                  </span>
                 </li>
               ))}
             </ul>
-          </>
-        ) : !data?.lastWorkout ? (
-          <div className="mb-4">
-            <p className="text-sm font-medium text-foreground mb-0.5">Ready to log your first workout?</p>
-            <p className="text-xs text-muted-foreground">No plan needed — start a session and log sets as you go.</p>
-          </div>
-        ) : (
-          <p className="text-muted-foreground text-sm mb-4">No plan scheduled for today</p>
-        )}
-        <Link
-          href="/workout"
-          className="block w-full text-center bg-primary hover:bg-primary/80 text-primary-foreground font-semibold py-3 rounded-xl transition-colors"
-        >
-          Start Workout
-        </Link>
+          ) : null}
 
-        <div className="mt-4 pt-4 border-t border-border space-y-3">
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <p className="text-[11px] text-muted-foreground">Streak</p>
-              <p className="text-lg font-semibold tabular-nums">
-                {data?.currentStreakDays ?? 0}
-                <span className="text-sm text-muted-foreground font-normal ml-1">days</span>
-              </p>
-            </div>
-            <div>
-              <p className="text-[11px] text-muted-foreground">This week</p>
-              <p className="text-lg font-semibold tabular-nums">
-                {data?.weeklyWorkoutCount ?? 0}
-                {data?.weeklyWorkoutGoal ? (
-                  <span className="text-sm text-muted-foreground font-normal">/{data.weeklyWorkoutGoal}</span>
-                ) : null}
-              </p>
-            </div>
-            <div>
-              <p className="text-[11px] text-muted-foreground">Weight goal</p>
-              <p className="text-sm font-semibold leading-6">
-                {data?.targetWeightKg != null ? formatWeight(data.targetWeightKg, weightUnit) : "Not set"}
-              </p>
-            </div>
-          </div>
+          <Link
+            href="/workout"
+            className="block rounded-md bg-primary px-4 py-3 text-center text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/85"
+          >
+            Start workout
+          </Link>
+        </div>
+      </section>
 
-          {(data?.weeklyWorkoutGoal || data?.targetWeightKg != null) ? (
-            <div className="space-y-1">
-              {data?.weeklyWorkoutGoal ? (
-                <p className="text-xs text-muted-foreground">
-                  Weekly goal: {data.weeklyWorkoutCount}/{data.weeklyWorkoutGoal} workouts
-                  {" · "}
-                  {formatShortDate(data.weeklyGoalStartDate)}-{formatShortDate(data.weeklyGoalEndDate)}
-                </p>
-              ) : (
-                <p className="text-xs text-muted-foreground">
-                  Set a weekly workout goal in Settings.
-                </p>
-              )}
-              {data?.targetWeightKg != null ? (
-                data.currentWeightKg != null && data.weightGoalDeltaKg != null ? (
-                  <p className="text-xs text-muted-foreground">
-                    Current: {formatWeight(data.currentWeightKg, weightUnit)}
-                    {" · "}
-                    {formatWeightGoalDelta(data.weightGoalDeltaKg, weightUnit)}
-                  </p>
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    Set a current body weight to compare against your target.
-                  </p>
-                )
-              ) : (
-                <p className="text-xs text-muted-foreground">
-                  Add a target weight from the Weight tab.
-                </p>
-              )}
-            </div>
-          ) : (
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-xs text-muted-foreground">
-                Add a weekly goal or target weight to keep momentum visible here.
-              </p>
-              <div className="flex items-center gap-3 shrink-0">
-                <Link href="/settings" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-                  Weekly goal
-                </Link>
-                <Link href="/metrics" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-                  Target weight
+      <section className="space-y-3">
+        {statItems.length > 0 ? (
+          <p className="text-sm text-muted-foreground">{statItems.join(" - ")}</p>
+        ) : null}
+
+        {goalItems.length > 0 ? (
+          <div className="space-y-2 border-t border-border pt-3 text-xs text-muted-foreground">
+            {hasWeeklyGoal ? (
+              <div className="flex items-start justify-between gap-4">
+                <p>{goalItems[0]}</p>
+                <Link
+                  href="/settings"
+                  className="shrink-0 transition-colors hover:text-foreground"
+                >
+                  Edit
                 </Link>
               </div>
-            </div>
-          )}
-        </div>
-      </div>
+            ) : null}
 
-      {/* Current weight — compact inline row */}
-      <div className="flex items-center justify-between px-1 mb-4">
-        <div>
-          <p className="text-xs text-muted-foreground mb-0.5">Current weight</p>
-          {data?.currentWeight != null ? (
-            <p className="text-lg font-semibold tabular-nums">
-              {formatWeight(data.currentWeight, weightUnit)}
-            </p>
-          ) : (
-            <p className="text-sm text-muted-foreground">Not logged</p>
-          )}
-        </div>
-        <Link
-          href="/metrics"
-          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-        >
-          Log weight
-        </Link>
-      </div>
+            {hasTargetWeight ? (
+              <div className="flex items-start justify-between gap-4">
+                <p>{goalItems[hasWeeklyGoal ? 1 : 0]}</p>
+                <Link
+                  href="/metrics"
+                  className="shrink-0 transition-colors hover:text-foreground"
+                >
+                  Update
+                </Link>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </section>
 
-      {/* Last Workout — secondary, only shown when it exists */}
-      {data?.lastWorkout && (
-        <div className="bg-card rounded-2xl p-4 ring-1 ring-foreground/5">
-          <div className="flex items-baseline justify-between mb-3">
-            <p className="text-sm font-medium">Last workout</p>
+      {data?.lastWorkout ? (
+        <section className="space-y-3 border-t border-border pt-4">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="text-sm font-medium">Last workout</h2>
             <p className="text-xs text-muted-foreground">{data.lastWorkout.date}</p>
           </div>
           <ul className="space-y-2">
             {data.lastWorkout.exercises.map((ex) => (
-              <li key={ex.name}>
-                <p className="text-sm text-foreground">{ex.name}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{ex.sets.join(" · ")}</p>
+              <li key={ex.name} className="flex items-start justify-between gap-3 text-sm">
+                <span className="min-w-0 flex-1">{ex.name}</span>
+                <span className="shrink-0 text-right text-xs text-muted-foreground">
+                  {ex.sets.join(" - ")}
+                </span>
               </li>
             ))}
           </ul>
-        </div>
-      )}
+        </section>
+      ) : null}
     </div>
   );
 }

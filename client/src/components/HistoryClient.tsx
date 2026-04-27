@@ -41,7 +41,7 @@ export default function HistoryClient({
   if (initialSessions.length === 0) {
     return (
       <p className="text-sm text-muted-foreground py-8">
-        No workouts logged yet. Start one from the Workout tab.
+        Log your first workout from the Workout tab.
       </p>
     );
   }

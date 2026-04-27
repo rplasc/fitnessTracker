@@ -465,11 +465,6 @@ export default function WorkoutLogger({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          {!selectedExercise && (
-            <p className="text-xs text-muted-foreground">
-              Choose an exercise, then log one set at a time.
-            </p>
-          )}
 
           {!selectedExercise && (
             <div className="max-h-48 overflow-y-auto space-y-1">

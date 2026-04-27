@@ -55,6 +55,7 @@ function beep() {
 export default function RestTimer() {
   const [stored, setStored] = useState<Stored | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  const [expanded, setExpanded] = useState(false);
   const rangForEndMs = useRef<number | null>(null);
 
   useEffect(() => {
@@ -108,6 +109,7 @@ export default function RestTimer() {
   function dismiss() {
     writeStored(null);
     setStored(null);
+    setExpanded(false);
   }
 
   function addFifteen() {
@@ -129,7 +131,7 @@ export default function RestTimer() {
     >
       <div className="max-w-lg mx-auto px-3 pb-2">
         <div
-          className={`pointer-events-auto bg-card ring-1 ring-foreground/10 rounded-2xl shadow-lg overflow-hidden ${
+          className={`pointer-events-auto bg-card ring-1 ring-foreground/10 rounded-md shadow-sm overflow-hidden ${
             expired ? "ring-primary/50" : ""
           }`}
         >
@@ -137,28 +139,52 @@ export default function RestTimer() {
             className="h-0.5 bg-primary transition-all"
             style={{ width: `${progress * 100}%` }}
           />
-          <div className="flex items-center justify-between px-4 py-2.5">
+          <button
+            type="button"
+            onClick={() => setExpanded((value) => !value)}
+            className="flex w-full items-center justify-between px-4 py-2.5 text-left"
+            aria-expanded={expanded}
+          >
             <div>
               <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
                 {expired ? "Rest done" : "Rest"}
               </p>
-              <p className="text-xl font-bold tabular-nums mt-0.5">{label}</p>
+              <p className="mt-0.5 text-xl font-bold tabular-nums">{label}</p>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={addFifteen}
-                className="text-xs font-medium text-foreground bg-muted hover:bg-muted/70 px-3 py-1.5 rounded-lg transition-colors"
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span>{expired ? "Tap to dismiss" : "Tap to skip"}</span>
+              <svg
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`}
+                aria-hidden="true"
               >
-                +15s
-              </button>
+                <path d="m5 7.5 5 5 5-5" />
+              </svg>
+            </div>
+          </button>
+          {expanded ? (
+            <div className="flex items-center justify-end gap-2 border-t border-border px-4 py-2">
+              {!expired ? (
+                <button
+                  onClick={addFifteen}
+                  className="rounded-md bg-muted px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted/70"
+                >
+                  +15s
+                </button>
+              ) : null}
               <button
                 onClick={dismiss}
-                className="text-xs font-medium text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-lg transition-colors"
+                className="rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
               >
                 {expired ? "Dismiss" : "Skip"}
               </button>
             </div>
-          </div>
+          ) : null}
         </div>
       </div>
     </div>
