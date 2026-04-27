@@ -1,13 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import dynamic from "next/dynamic";
+import { useDeferredValue, useState } from "react";
 import type { Exercise, Modality } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import ExerciseDetail from "@/components/ExerciseDetail";
+
+const ExerciseDetail = dynamic(() => import("@/components/ExerciseDetail"), {
+  loading: () => <p className="py-8 text-sm text-muted-foreground">Loading exercise...</p>,
+});
 
 const CATEGORIES = ["All", "Chest", "Back", "Legs", "Shoulders", "Arms", "Core", "Cardio"];
 
@@ -34,6 +38,7 @@ export default function ExercisesClient({
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
+  const deferredSearch = useDeferredValue(search);
 
   if (selectedExercise) {
     return (
@@ -45,9 +50,10 @@ export default function ExercisesClient({
     );
   }
 
+  const searchQuery = deferredSearch.trim().toLowerCase();
   const visible = exercises.filter((e) => {
     const matchCat = filter === "All" || e.category === filter;
-    const matchSearch = !search || e.name.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = !searchQuery || e.name.toLowerCase().includes(searchQuery);
     return matchCat && matchSearch;
   });
 
