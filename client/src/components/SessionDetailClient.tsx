@@ -290,15 +290,15 @@ export default function SessionDetailClient({
       </div>
 
       {session.sets.length === 0 ? (
-        <div className="bg-card rounded-2xl p-6 ring-1 ring-foreground/5 text-center">
-          <p className="text-sm text-muted-foreground">No sets logged.</p>
-        </div>
+        <p className="text-sm text-muted-foreground py-6">No sets logged.</p>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-5">
           {Object.entries(byExercise).map(([name, sets]) => (
-            <div key={name} className="bg-card rounded-2xl ring-1 ring-foreground/5 overflow-hidden">
-              <p className="text-sm font-medium px-4 pt-3 pb-2">{name}</p>
-              <div className="divide-y divide-border">
+            <div key={name}>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+                {name}
+              </p>
+              <div className="divide-y divide-border border-y border-border">
                 {sets.map((s) =>
                   editingSetId === s.id && draft ? (
                     <SetEditor
@@ -329,9 +329,11 @@ export default function SessionDetailClient({
         </div>
       )}
 
-      <div className="bg-card rounded-2xl p-4 ring-1 ring-foreground/5 space-y-2">
+      <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-medium">Session notes</p>
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            Session notes
+          </p>
           {notesSaved && (
             <p className="text-[10px] text-primary">Saved</p>
           )}
@@ -342,7 +344,7 @@ export default function SessionDetailClient({
           maxLength={500}
           rows={2}
           placeholder="How did this session feel?"
-          className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+          className="w-full bg-muted/40 border border-border rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
         />
         <div className="flex justify-end">
           <Button
@@ -358,7 +360,7 @@ export default function SessionDetailClient({
 
       <div className="pt-2">
         {confirmingSession ? (
-          <div className="bg-card rounded-2xl p-4 ring-1 ring-destructive/30 flex items-center justify-between gap-3">
+          <div className="border border-destructive/30 rounded-md p-3 flex items-center justify-between gap-3">
             <p className="text-xs text-muted-foreground">Delete this session?</p>
             <div className="flex items-center gap-2">
               <button
@@ -402,23 +404,25 @@ function SetRow({
     <button
       type="button"
       onClick={onEdit}
-      className="w-full text-left px-4 py-2 hover:bg-muted/40 transition-colors"
+      className="w-full text-left py-2 hover:bg-muted/30 transition-colors -mx-1 px-1"
     >
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-xs text-muted-foreground w-16 flex items-center gap-1 shrink-0">
-          <span>Set {set.setNumber}</span>
-          {set.isWarmup && (
-            <span className="text-[9px] font-semibold px-1 rounded bg-muted text-muted-foreground">
-              W
-            </span>
-          )}
+      <div className="flex items-center gap-3">
+        <span className="text-xs text-muted-foreground tabular-nums w-5 shrink-0 text-right">
+          {set.setNumber}
         </span>
-        <span className="text-sm tabular-nums flex-1 text-center">
-          {formatSetSummary(set, weightUnit)}
+        <div className="flex-1 flex items-baseline gap-2 min-w-0">
+          <span className="text-base font-semibold tabular-nums">
+            {formatSetSummary(set, weightUnit)}
+          </span>
           {set.rpe !== null && (
-            <span className="ml-2 text-xs text-muted-foreground">@{set.rpe}</span>
+            <span className="text-xs text-muted-foreground tabular-nums">@{set.rpe}</span>
           )}
-        </span>
+        </div>
+        {set.isWarmup && (
+          <span className="text-[9px] font-semibold px-1 rounded bg-muted text-muted-foreground shrink-0">
+            W
+          </span>
+        )}
         <svg
           viewBox="0 0 24 24"
           fill="none"
@@ -433,7 +437,7 @@ function SetRow({
         </svg>
       </div>
       {set.notes && (
-        <p className="text-xs text-muted-foreground pl-16 pr-2 mt-0.5">
+        <p className="text-xs text-muted-foreground pl-8 pr-2 mt-0.5">
           {set.notes}
         </p>
       )}

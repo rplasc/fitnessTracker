@@ -146,26 +146,26 @@ export default function SettingsClient({
   }
 
   return (
-    <div className="bg-card rounded-2xl ring-1 ring-foreground/5 divide-y divide-border">
+    <div className="divide-y divide-border border-y border-border">
       <div className="flex items-center justify-between px-5 py-3 text-xs text-muted-foreground">
         <span>Preferences update immediately.</span>
         <span aria-live="polite">{saveMessage ?? "\u00A0"}</span>
       </div>
-      <div className="flex items-center justify-between px-5 py-4">
+      <div className="flex items-center justify-between py-3">
         <div>
           <p className="text-sm font-medium">Weight unit</p>
           <p className="text-xs text-muted-foreground mt-0.5">Used across workouts and body weight log</p>
         </div>
         <UnitToggle options={["kg", "lb"]} value={weightUnit} onChange={handleWeightUnitChange} disabled={savingField !== null} />
       </div>
-      <div className="flex items-center justify-between px-5 py-4">
+      <div className="flex items-center justify-between py-3">
         <div>
           <p className="text-sm font-medium">Height unit</p>
           <p className="text-xs text-muted-foreground mt-0.5">Used for your profile height</p>
         </div>
         <UnitToggle options={["cm", "in"]} value={heightUnit} onChange={handleHeightUnitChange} disabled={savingField !== null} />
       </div>
-      <div className="flex items-center justify-between px-5 py-4">
+      <div className="flex items-center justify-between py-3">
         <div>
           <p className="text-sm font-medium">Rest timer</p>
           <p className="text-xs text-muted-foreground mt-0.5">Default countdown after each working set</p>
@@ -177,7 +177,7 @@ export default function SettingsClient({
           disabled={savingField !== null}
         />
       </div>
-      <div className="flex items-center justify-between px-5 py-4">
+      <div className="flex items-center justify-between py-3">
         <div>
           <p className="text-sm font-medium">Weekly workout goal</p>
           <p className="text-xs text-muted-foreground mt-0.5">Track finished workouts from Monday to Sunday</p>
@@ -190,7 +190,7 @@ export default function SettingsClient({
         />
       </div>
 
-      <div className="flex items-center justify-between px-5 py-4">
+      <div className="flex items-center justify-between py-3">
         <div>
           <p className="text-sm font-medium">Sign out</p>
           <p className="text-xs text-muted-foreground mt-0.5">End your current session</p>
@@ -228,7 +228,7 @@ export default function SettingsClient({
         )}
       </div>
 
-      <div className="flex items-center justify-between px-5 py-4">
+      <div className="flex items-center justify-between py-3">
         <div>
           <p className="text-sm font-medium text-destructive">Reset data</p>
           <p className="text-xs text-muted-foreground mt-0.5">Delete all workouts, metrics, and plans</p>

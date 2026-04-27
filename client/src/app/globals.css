@@ -134,11 +134,15 @@ body {
     @apply bg-background text-foreground;
     padding-top: env(safe-area-inset-top);
     font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1, "ss01" 1, "cv11" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   html {
     @apply font-sans;
   }
   h1, h2, h3 {
-    letter-spacing: -0.02em;
+    letter-spacing: -0.025em;
+    font-feature-settings: "ss01" 1, "cv11" 1;
   }
 }

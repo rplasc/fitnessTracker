@@ -40,11 +40,9 @@ export default function HistoryClient({
 }) {
   if (initialSessions.length === 0) {
     return (
-      <div className="bg-card rounded-2xl p-8 ring-1 ring-foreground/5 text-center">
-        <p className="text-sm text-muted-foreground">
-          No workouts logged yet. Start one from the Workout tab.
-        </p>
-      </div>
+      <p className="text-sm text-muted-foreground py-8">
+        No workouts logged yet. Start one from the Workout tab.
+      </p>
     );
   }
 
@@ -61,17 +59,17 @@ export default function HistoryClient({
     <div className="space-y-5">
       {groups.map((g) => (
         <div key={g.label}>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2 px-1">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">
             {g.label}
           </p>
-          <div className="bg-card rounded-2xl ring-1 ring-foreground/5 divide-y divide-border overflow-hidden">
+          <div className="divide-y divide-border border-y border-border">
             {g.sessions.map((s) => {
               const date = new Date(s.startedAt);
               return (
                 <Link
                   key={s.id}
                   href={`/history/${s.id}`}
-                  className="flex items-center justify-between px-4 py-3 hover:bg-muted/40 transition-colors"
+                  className="flex items-center justify-between py-2.5 hover:bg-muted/30 transition-colors -mx-1 px-1"
                 >
                   <div className="min-w-0">
                     <p className="text-sm font-medium">

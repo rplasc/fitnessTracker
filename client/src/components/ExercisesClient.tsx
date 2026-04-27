@@ -206,25 +206,25 @@ export default function ExercisesClient({
         <div className="space-y-5">
           {Object.entries(grouped).map(([category, exs]) => (
             <div key={category}>
-              <h2 className="text-xs font-medium text-muted-foreground mb-2">
+              <h2 className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">
                 {category}
               </h2>
-              <div className="bg-card rounded-2xl divide-y divide-border overflow-hidden">
+              <div className="divide-y divide-border border-y border-border">
                 {exs.map((ex) => (
                   <button
                     key={ex.id}
                     onClick={() => setSelectedExercise(ex)}
-                    className="w-full px-4 py-3 flex items-center justify-between hover:bg-muted/50 transition-colors text-left cursor-pointer"
+                    className="w-full py-2.5 flex items-center justify-between hover:bg-muted/30 transition-colors text-left cursor-pointer -mx-1 px-1"
                   >
                     <span className="text-sm text-foreground">{ex.name}</span>
                     <div className="flex items-center gap-2 shrink-0">
                       {ex.modality !== "strength" && (
-                        <span className="text-[10px] uppercase tracking-wide bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
                           {ex.modality}
                         </span>
                       )}
                       {ex.isCustom && (
-                        <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                        <span className="text-[10px] uppercase tracking-wider text-primary">
                           custom
                         </span>
                       )}

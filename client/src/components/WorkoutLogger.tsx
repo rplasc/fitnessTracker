@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useId } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import PrBanner from "@/components/PrBanner";
 import RestTimer, { startRestTimer } from "@/components/RestTimer";
 
 function CloseIcon() {
@@ -80,6 +79,7 @@ export default function WorkoutLogger({
   const [finishing, setFinishing] = useState(false);
   const [canceling, setCanceling] = useState(false);
   const [prMessage, setPrMessage] = useState<string | null>(null);
+  const [prSetIds, setPrSetIds] = useState<Set<number>>(new Set());
   const [formError, setFormError] = useState<string | null>(null);
   const [sessionError, setSessionError] = useState<string | null>(null);
   const repsId = useId();
@@ -87,6 +87,12 @@ export default function WorkoutLogger({
   const durationId = useId();
   const distanceId = useId();
   const notesId = useId();
+
+  useEffect(() => {
+    if (!prMessage) return;
+    const id = window.setTimeout(() => setPrMessage(null), 3000);
+    return () => window.clearTimeout(id);
+  }, [prMessage]);
 
   useEffect(() => {
     async function findActive() {
@@ -236,24 +242,35 @@ export default function WorkoutLogger({
 
       if (!isWarmup) startRestTimer(restSeconds);
 
-      // PR message per modality
+      // PR detection per modality
+      let prText: string | null = null;
       if (modality === "strength" && (newSet.isWeightPr || newSet.isOneRmPr)) {
-        const displayWeight = toDisplayWeight(weightKg ?? 0, weightUnit).toFixed(1);
-        setPrMessage(
-          newSet.isWeightPr
-            ? `${selectedExercise.name}: ${displayWeight} ${weightUnit} × ${repsNum}`
-            : `${selectedExercise.name}: new est. 1RM`
-        );
+        if (newSet.isWeightPr) {
+          const displayWeight = toDisplayWeight(weightKg ?? 0, weightUnit).toFixed(1);
+          prText = `${displayWeight} ${weightUnit} × ${repsNum}`;
+        } else {
+          const oneRm = (weightKg ?? 0) * (1 + (repsNum ?? 0) / 30);
+          prText = `Est. 1RM ${toDisplayWeight(oneRm, weightUnit).toFixed(1)} ${weightUnit}`;
+        }
       } else if (modality === "cardio" && (newSet.isDistancePr || newSet.isPacePr)) {
         if (newSet.isDistancePr) {
           const d = toDisplayDistance(distanceM ?? 0, weightUnit).toFixed(2);
-          setPrMessage(`${selectedExercise.name}: longest ${d} ${distanceUnit(weightUnit)}`);
+          prText = `Longest ${d} ${distanceUnit(weightUnit)}`;
         } else {
           const pace = (durationSec ?? 0) / (distanceM ?? 1);
-          setPrMessage(`${selectedExercise.name}: best pace ${formatPace(pace, weightUnit)}`);
+          prText = `Best pace ${formatPace(pace, weightUnit)}`;
         }
       } else if (modality === "timed" && newSet.isDurationPr) {
-        setPrMessage(`${selectedExercise.name}: longest hold ${formatDuration(durationSec ?? 0)}`);
+        prText = `Longest hold ${formatDuration(durationSec ?? 0)}`;
+      }
+
+      if (prText) {
+        setPrMessage(prText);
+        setPrSetIds((prev) => {
+          const next = new Set(prev);
+          next.add(newSet.id);
+          return next;
+        });
       }
 
       setIsWarmup(false);
@@ -278,6 +295,12 @@ export default function WorkoutLogger({
     setSession((s) =>
       s ? { ...s, sets: s.sets.filter((ws) => ws.id !== setId) } : s
     );
+    setPrSetIds((prev) => {
+      if (!prev.has(setId)) return prev;
+      const next = new Set(prev);
+      next.delete(setId);
+      return next;
+    });
   }, []);
 
   async function finishSession() {
@@ -293,6 +316,7 @@ export default function WorkoutLogger({
       setSession(null);
       setSelectedExercise(null);
       setPrMessage(null);
+      setPrSetIds(new Set());
     } catch {
       setSessionError("Could not finish this workout.");
     } finally {
@@ -320,6 +344,7 @@ export default function WorkoutLogger({
       setSession(null);
       setSelectedExercise(null);
       setPrMessage(null);
+      setPrSetIds(new Set());
     } catch {
       setSessionError("Could not cancel this workout.");
     } finally {
@@ -376,7 +401,15 @@ export default function WorkoutLogger({
       <RestTimer />
 
       {prMessage && (
-        <PrBanner message={prMessage} onDismiss={() => setPrMessage(null)} />
+        <p
+          className="text-xs py-1 mb-2 flex items-center gap-2"
+          aria-live="polite"
+        >
+          <span className="uppercase tracking-wider text-primary text-[10px] font-medium">
+            New PR
+          </span>
+          <span className="text-muted-foreground tabular-nums">{prMessage}</span>
+        </p>
       )}
 
         <div className="flex items-center justify-between py-1 mb-3">
@@ -641,31 +674,46 @@ export default function WorkoutLogger({
       </Card>
 
       {setsByExercise && Object.keys(setsByExercise).length > 0 && (
-        <div className="space-y-4 pt-1 border-t border-border">
-          <h3 className="font-semibold text-sm pt-3">
-            Logged Sets ({session.sets.length})
-          </h3>
+        <div className="space-y-5 pt-4 border-t border-border">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            Logged sets · {session.sets.length}
+          </p>
           {Object.entries(setsByExercise).map(([name, sets]) => (
             <div key={name}>
-              <p className="text-sm font-medium text-foreground mb-1">{name}</p>
-              <div className="divide-y divide-border">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+                {name}
+              </p>
+              <div className="divide-y divide-border border-y border-border">
                 {sets.map((s) => (
-                  <div key={s.id} className="py-2.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground w-16 flex items-center gap-1">
-                        <span>Set {s.setNumber}</span>
-                        {s.isWarmup && (
-                          <span className="text-[9px] font-semibold px-1 rounded bg-muted text-muted-foreground">
-                            W
+                  <div key={s.id} className="py-2">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-muted-foreground tabular-nums w-5 shrink-0 text-right">
+                        {s.setNumber}
+                      </span>
+                      <div className="flex-1 flex items-baseline gap-2 min-w-0">
+                        <span className="text-base font-semibold tabular-nums">
+                          {formatSetSummary(s, weightUnit)}
+                        </span>
+                        {s.rpe !== null && (
+                          <span className="text-xs text-muted-foreground tabular-nums">
+                            @{s.rpe}
                           </span>
                         )}
-                      </span>
-                      <span className="text-sm tabular-nums flex-1 text-center">
-                        {formatSetSummary(s, weightUnit)}
-                        {s.rpe !== null && (
-                          <span className="ml-2 text-xs text-muted-foreground">@{s.rpe}</span>
-                        )}
-                      </span>
+                      </div>
+                      {(s.isWarmup || prSetIds.has(s.id)) && (
+                        <span className="flex items-center gap-1 shrink-0">
+                          {s.isWarmup && (
+                            <span className="text-[9px] font-semibold px-1 rounded bg-muted text-muted-foreground">
+                              W
+                            </span>
+                          )}
+                          {prSetIds.has(s.id) && (
+                            <span className="text-[9px] font-semibold px-1 rounded bg-primary/15 text-primary">
+                              PR
+                            </span>
+                          )}
+                        </span>
+                      )}
                       <Button
                         variant="ghost"
                         size="icon-sm"
@@ -676,7 +724,7 @@ export default function WorkoutLogger({
                       </Button>
                     </div>
                     {s.notes && (
-                      <p className="text-xs text-muted-foreground pl-16 pr-8 mt-0.5 truncate">
+                      <p className="text-xs text-muted-foreground pl-8 pr-2 mt-0.5 truncate">
                         {s.notes}
                       </p>
                     )}

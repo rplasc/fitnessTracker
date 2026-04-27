@@ -10,22 +10,22 @@ import {
   formatPace,
 } from "@/lib/units";
 
-const W = 300;
-const H = 80;
-const PAD = { top: 8, right: 4, bottom: 8, left: 4 };
+const W = 320;
+const H = 96;
+const PAD = { top: 12, right: 36, bottom: 14, left: 4 };
 
-function formatDate(iso: string): string {
+function shortDate(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-function LineChart({
+function Sparkline({
   values,
-  dates,
   invert = false,
+  formatLabel,
 }: {
   values: number[];
-  dates: string[];
   invert?: boolean;
+  formatLabel: (v: number) => string;
 }) {
   if (values.length === 0) return null;
 
@@ -36,59 +36,80 @@ function LineChart({
   const range = max - min || 1;
 
   const pts = values.map((v, i) => {
-    const norm = (v - min) / range; // 0 = min (worst pace if invert), 1 = max
-    const y = invert
-      ? PAD.top + norm * innerH // lower pace plots higher
-      : PAD.top + (1 - norm) * innerH;
+    const norm = (v - min) / range;
+    const y = invert ? PAD.top + norm * innerH : PAD.top + (1 - norm) * innerH;
     return {
       x: PAD.left + (values.length === 1 ? innerW / 2 : (i / (values.length - 1)) * innerW),
       y,
     };
   });
 
-  const linePoints = pts.map((p) => `${p.x},${p.y}`).join(" ");
-  const areaPoints = [
-    ...pts.map((p) => `${p.x},${p.y}`),
-    `${pts[pts.length - 1].x},${PAD.top + innerH}`,
-    `${pts[0].x},${PAD.top + innerH}`,
-  ].join(" ");
+  const linePath = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
+  const last = pts[pts.length - 1];
+  const lastValue = values[values.length - 1];
+  const best = invert ? min : max;
+  const bestY = invert ? PAD.top + innerH : PAD.top;
 
   return (
-    <div>
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: H, color: "var(--primary)" }}>
-        <defs>
-          <linearGradient id="exDetailFade" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" style={{ stopColor: "var(--primary)" }} stopOpacity="0.25" />
-            <stop offset="100%" style={{ stopColor: "var(--primary)" }} stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        {values.length > 1 && <polygon points={areaPoints} fill="url(#exDetailFade)" />}
-        {values.length > 1 && (
-          <polyline
-            points={linePoints}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        )}
-        {pts.map((p, i) => (
-          <circle
-            key={i}
-            cx={p.x}
-            cy={p.y}
-            r={values.length === 1 ? 4 : 2.5}
-            fill="currentColor"
-          />
-        ))}
-      </svg>
-      {dates.length >= 2 && (
-        <div className="flex justify-between text-[10px] text-muted-foreground mt-1 px-1">
-          <span>{formatDate(dates[0])}</span>
-          <span>{formatDate(dates[dates.length - 1])}</span>
-        </div>
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      className="w-full"
+      style={{ height: H, color: "var(--primary)" }}
+      role="img"
+      aria-label="trend chart"
+    >
+      {/* Best gridline */}
+      <line
+        x1={PAD.left}
+        x2={W - PAD.right}
+        y1={bestY}
+        y2={bestY}
+        stroke="currentColor"
+        strokeOpacity={0.18}
+        strokeDasharray="2 3"
+        strokeWidth={1}
+      />
+      <text
+        x={W - PAD.right + 4}
+        y={bestY + 3}
+        fontSize="9"
+        fill="currentColor"
+        fillOpacity={0.6}
+      >
+        {formatLabel(best)}
+      </text>
+      {/* Line */}
+      {values.length > 1 && (
+        <path
+          d={linePath}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       )}
+      {/* Latest dot + label */}
+      <circle cx={last.x} cy={last.y} r={2.75} fill="currentColor" />
+      <text
+        x={W - PAD.right + 4}
+        y={last.y + 3}
+        fontSize="11"
+        fontWeight={600}
+        fill="currentColor"
+      >
+        {formatLabel(lastValue)}
+      </text>
+    </svg>
+  );
+}
+
+function Kpi({ label, value, sub }: { label: string; value: string; sub?: string }) {
+  return (
+    <div>
+      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="text-base font-semibold tabular-nums mt-0.5">{value}</p>
+      {sub && <p className="text-[11px] text-muted-foreground tabular-nums">{sub}</p>}
     </div>
   );
 }
@@ -117,15 +138,14 @@ export default function ExerciseDetail({
   }, [exercise.id]);
 
   const progress = data && data.id === exercise.id ? data.points : null;
-  const dates = (progress ?? []).map((p) => p.date);
   const sessionCount = progress?.length ?? 0;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div className="flex items-center gap-3">
         <button
           onClick={onBack}
-          className="cursor-pointer flex items-center justify-center w-8 h-8 rounded-xl bg-muted text-muted-foreground hover:text-foreground transition-colors shrink-0"
+          className="cursor-pointer flex items-center justify-center w-8 h-8 rounded-md bg-muted text-muted-foreground hover:text-foreground transition-colors shrink-0"
           aria-label="Back to exercises"
         >
           <svg
@@ -141,7 +161,7 @@ export default function ExerciseDetail({
           </svg>
         </button>
         <div className="min-w-0">
-          <h2 className="text-xl font-bold truncate">{exercise.name}</h2>
+          <h2 className="text-xl font-semibold truncate tracking-tight">{exercise.name}</h2>
           <p className="text-xs text-muted-foreground">
             <span className="capitalize">{exercise.modality}</span>
             {" · "}
@@ -157,63 +177,87 @@ export default function ExerciseDetail({
       </div>
 
       {progress === null ? (
-        <div className="text-center py-12 text-muted-foreground text-sm">Loading…</div>
+        <p className="text-sm text-muted-foreground py-8">Loading…</p>
       ) : progress.length === 0 ? (
-        <div className="bg-card rounded-2xl p-6 ring-1 ring-foreground/5 text-center">
-          <p className="text-muted-foreground text-sm">No sets logged yet for this exercise.</p>
-        </div>
+        <p className="text-sm text-muted-foreground py-8">
+          No sets logged yet. Log one from the Workout tab.
+        </p>
       ) : exercise.modality === "strength" ? (
-        <StrengthProgress progress={progress} dates={dates} weightUnit={weightUnit} />
+        <StrengthView progress={progress} weightUnit={weightUnit} />
       ) : exercise.modality === "cardio" ? (
-        <CardioProgress progress={progress} dates={dates} weightUnit={weightUnit} />
+        <CardioView progress={progress} weightUnit={weightUnit} />
       ) : (
-        <TimedProgress progress={progress} dates={dates} />
+        <TimedView progress={progress} />
       )}
     </div>
   );
 }
 
-function StrengthProgress({
+function StrengthView({
   progress,
-  dates,
   weightUnit,
 }: {
   progress: ProgressPoint[];
-  dates: string[];
   weightUnit: string;
 }) {
   const prWeight = Math.max(...progress.map((p) => p.maxWeight ?? 0));
   const prOneRm = Math.max(...progress.map((p) => p.estimatedOneRm ?? 0));
-  const maxWeightValues = progress.map((p) => toDisplayWeight(p.maxWeight ?? 0, weightUnit));
+  const lastVolume = progress[progress.length - 1]?.totalVolume ?? 0;
   const oneRmValues = progress.map((p) => toDisplayWeight(p.estimatedOneRm ?? 0, weightUnit));
-  const volumeValues = progress.map((p) => toDisplayWeight(p.totalVolume ?? 0, weightUnit));
 
   return (
-    <>
-      <div className="grid grid-cols-2 gap-3">
-        <Card label="Personal Record" value={`${toDisplayWeight(prWeight, weightUnit).toFixed(1)}`} unit={weightUnit} />
-        <Card label="Est. 1RM" value={`${toDisplayWeight(prOneRm, weightUnit).toFixed(1)}`} unit={weightUnit} />
+    <div className="space-y-6">
+      <div className="grid grid-cols-3 gap-x-4">
+        <Kpi
+          label="PR"
+          value={`${toDisplayWeight(prWeight, weightUnit).toFixed(1)} ${weightUnit}`}
+        />
+        <Kpi
+          label="Est. 1RM"
+          value={`${toDisplayWeight(prOneRm, weightUnit).toFixed(1)} ${weightUnit}`}
+        />
+        <Kpi
+          label="Last vol."
+          value={`${toDisplayWeight(lastVolume, weightUnit).toFixed(0)} ${weightUnit}`}
+        />
       </div>
-      <ChartCard title="Max Weight" subtitle={weightUnit}>
-        <LineChart values={maxWeightValues} dates={dates} />
-      </ChartCard>
-      <ChartCard title="Est. 1RM" subtitle={weightUnit}>
-        <LineChart values={oneRmValues} dates={dates} />
-      </ChartCard>
-      <ChartCard title="Volume" subtitle={`reps × ${weightUnit}`}>
-        <LineChart values={volumeValues} dates={dates} />
-      </ChartCard>
-    </>
+
+      <div>
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+          Est. 1RM trend
+        </p>
+        <Sparkline
+          values={oneRmValues}
+          formatLabel={(v) => v.toFixed(0)}
+        />
+      </div>
+
+      <RecentList>
+        <RecentRow
+          cols={["Date", "Top set", "Est. 1RM", "Volume"]}
+          header
+        />
+        {[...progress].reverse().slice(0, 12).map((p) => (
+          <RecentRow
+            key={p.date}
+            cols={[
+              shortDate(p.date),
+              `${toDisplayWeight(p.maxWeight ?? 0, weightUnit).toFixed(1)} ${weightUnit}`,
+              `${toDisplayWeight(p.estimatedOneRm ?? 0, weightUnit).toFixed(0)}`,
+              `${toDisplayWeight(p.totalVolume ?? 0, weightUnit).toFixed(0)}`,
+            ]}
+          />
+        ))}
+      </RecentList>
+    </div>
   );
 }
 
-function CardioProgress({
+function CardioView({
   progress,
-  dates,
   weightUnit,
 }: {
   progress: ProgressPoint[];
-  dates: string[];
   weightUnit: string;
 }) {
   const longest = Math.max(...progress.map((p) => p.totalDistanceMeters ?? 0));
@@ -221,89 +265,116 @@ function CardioProgress({
     .map((p) => p.avgPaceSecondsPerMeter)
     .filter((x): x is number => x !== null && x > 0);
   const bestPace = paces.length ? Math.min(...paces) : null;
-
+  const lastDist = progress[progress.length - 1]?.totalDistanceMeters ?? 0;
   const distanceValues = progress.map((p) => toDisplayDistance(p.totalDistanceMeters ?? 0, weightUnit));
-  const paceValues = progress.map((p) => p.avgPaceSecondsPerMeter ?? 0);
+  const unit = distanceUnit(weightUnit);
 
   return (
-    <>
-      <div className="grid grid-cols-2 gap-3">
-        <Card
+    <div className="space-y-6">
+      <div className="grid grid-cols-3 gap-x-4">
+        <Kpi
           label="Longest"
-          value={toDisplayDistance(longest, weightUnit).toFixed(2)}
-          unit={distanceUnit(weightUnit)}
+          value={`${toDisplayDistance(longest, weightUnit).toFixed(2)} ${unit}`}
         />
-        <Card
-          label="Best Pace"
-          value={bestPace !== null ? formatPace(bestPace, weightUnit).split(" ")[0] : "—"}
-          unit={bestPace !== null ? `/${distanceUnit(weightUnit)}` : ""}
+        <Kpi
+          label="Best pace"
+          value={bestPace !== null ? formatPace(bestPace, weightUnit) : "—"}
+        />
+        <Kpi
+          label="Last"
+          value={`${toDisplayDistance(lastDist, weightUnit).toFixed(2)} ${unit}`}
         />
       </div>
-      <ChartCard title="Total Distance" subtitle={distanceUnit(weightUnit)}>
-        <LineChart values={distanceValues} dates={dates} />
-      </ChartCard>
-      <ChartCard title="Average Pace" subtitle={`/${distanceUnit(weightUnit)} (lower is better)`}>
-        <LineChart values={paceValues} dates={dates} invert />
-      </ChartCard>
-    </>
-  );
-}
 
-function TimedProgress({
-  progress,
-  dates,
-}: {
-  progress: ProgressPoint[];
-  dates: string[];
-}) {
-  const longestHold = Math.max(...progress.map((p) => p.maxDurationSeconds ?? 0));
-  const maxValues = progress.map((p) => p.maxDurationSeconds ?? 0);
-  const totalValues = progress.map((p) => p.totalDurationSeconds ?? 0);
-
-  return (
-    <>
-      <div className="bg-card rounded-2xl p-5 ring-1 ring-foreground/5">
-        <p className="text-xs text-muted-foreground mb-1">Longest Hold</p>
-        <p className="text-3xl font-bold">{formatDuration(longestHold)}</p>
+      <div>
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+          Distance per session
+        </p>
+        <Sparkline
+          values={distanceValues}
+          formatLabel={(v) => v.toFixed(1)}
+        />
       </div>
-      <ChartCard title="Longest Hold" subtitle="per session">
-        <LineChart values={maxValues} dates={dates} />
-      </ChartCard>
-      <ChartCard title="Total Time" subtitle="per session">
-        <LineChart values={totalValues} dates={dates} />
-      </ChartCard>
-    </>
-  );
-}
 
-function Card({ label, value, unit }: { label: string; value: string; unit: string }) {
-  return (
-    <div className="bg-card rounded-2xl p-5 ring-1 ring-foreground/5">
-      <p className="text-xs text-muted-foreground mb-1">{label}</p>
-      <p className="text-3xl font-bold">
-        {value}{" "}
-        <span className="text-base text-muted-foreground font-normal">{unit}</span>
-      </p>
+      <RecentList>
+        <RecentRow cols={["Date", `Distance`, "Duration", `Pace`]} header />
+        {[...progress].reverse().slice(0, 12).map((p) => (
+          <RecentRow
+            key={p.date}
+            cols={[
+              shortDate(p.date),
+              `${toDisplayDistance(p.totalDistanceMeters ?? 0, weightUnit).toFixed(2)} ${unit}`,
+              formatDuration(p.totalDurationSeconds ?? 0),
+              p.avgPaceSecondsPerMeter ? formatPace(p.avgPaceSecondsPerMeter, weightUnit) : "—",
+            ]}
+          />
+        ))}
+      </RecentList>
     </div>
   );
 }
 
-function ChartCard({
-  title,
-  subtitle,
-  children,
-}: {
-  title: string;
-  subtitle: string;
-  children: React.ReactNode;
-}) {
+function TimedView({ progress }: { progress: ProgressPoint[] }) {
+  const longestHold = Math.max(...progress.map((p) => p.maxDurationSeconds ?? 0));
+  const lastTotal = progress[progress.length - 1]?.totalDurationSeconds ?? 0;
+  const maxValues = progress.map((p) => p.maxDurationSeconds ?? 0);
+
   return (
-    <div className="bg-card rounded-2xl p-5 ring-1 ring-foreground/5 space-y-3">
-      <div className="flex items-baseline justify-between">
-        <p className="text-sm font-medium">{title}</p>
-        <p className="text-xs text-muted-foreground">{subtitle}</p>
+    <div className="space-y-6">
+      <div className="grid grid-cols-3 gap-x-4">
+        <Kpi label="Longest hold" value={formatDuration(longestHold)} />
+        <Kpi label="Last session" value={formatDuration(lastTotal)} />
+        <Kpi label="Sessions" value={String(progress.length)} />
       </div>
-      {children}
+
+      <div>
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+          Longest hold per session
+        </p>
+        <Sparkline values={maxValues} formatLabel={(v) => formatDuration(v)} />
+      </div>
+
+      <RecentList>
+        <RecentRow cols={["Date", "Longest", "Total"]} header />
+        {[...progress].reverse().slice(0, 12).map((p) => (
+          <RecentRow
+            key={p.date}
+            cols={[
+              shortDate(p.date),
+              formatDuration(p.maxDurationSeconds ?? 0),
+              formatDuration(p.totalDurationSeconds ?? 0),
+            ]}
+          />
+        ))}
+      </RecentList>
+    </div>
+  );
+}
+
+function RecentList({ children }: { children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">
+        Recent sessions
+      </p>
+      <div className="divide-y divide-border">{children}</div>
+    </div>
+  );
+}
+
+function RecentRow({ cols, header = false }: { cols: string[]; header?: boolean }) {
+  const styles = header
+    ? "text-[10px] uppercase tracking-wider text-muted-foreground py-1"
+    : "text-sm text-foreground tabular-nums py-1.5";
+  const cls = `grid gap-2 ${styles}`;
+  const gridCols = cols.length === 4 ? "grid-cols-[3.5rem_1fr_1fr_1fr]" : "grid-cols-[3.5rem_1fr_1fr]";
+  return (
+    <div className={`${cls} ${gridCols}`}>
+      {cols.map((c, i) => (
+        <span key={i} className={i === 0 ? "" : "text-right"}>
+          {c}
+        </span>
+      ))}
     </div>
   );
 }
