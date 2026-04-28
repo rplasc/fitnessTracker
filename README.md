@@ -102,6 +102,21 @@ dotnet run --project .\server\server.csproj
 
 If you do not set it, the app uses `fittrack.db`.
 
+## Docker
+
+You can run the full app with Docker Compose from the repository root:
+
+```powershell
+docker compose up --build
+```
+
+This starts:
+
+- the frontend at `http://localhost:3200`
+- the backend at `http://localhost:9111`
+
+The SQLite database is stored in a named Docker volume so it persists across container restarts.
+
 ## Useful Commands
 
 ```powershell

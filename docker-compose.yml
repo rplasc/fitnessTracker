@@ -1,0 +1,31 @@
+services:
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      FitTrack__DbPath: /data/fittrack.db
+    ports:
+      - "9111:9111"
+    restart: unless-stopped
+    volumes:
+      - fittrack-data:/data
+
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        API_URL: http://backend:9111
+    depends_on:
+      - backend
+    environment:
+      API_URL: http://backend:9111
+      NODE_ENV: production
+    ports:
+      - "3200:3200"
+    restart: unless-stopped
+
+volumes:
+  fittrack-data:
